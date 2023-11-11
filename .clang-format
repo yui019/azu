@@ -8,7 +8,6 @@ ReferenceAlignment: Right
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
-IndentAccessModifiers: true
 AlignConsecutiveMacros: AcrossEmptyLines
 AlignConsecutiveAssignments: Consecutive
 AlignTrailingComments: Always
