@@ -1,8 +1,8 @@
 #include "vk_context.h"
 
-#include "util.h"
+#include "../util/util.h"
 #include "VkBootstrap.h"
-#include "vk_initializers.h"
+#include "../util/vk_init.h"
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan_core.h>
 
@@ -189,7 +189,7 @@ void VkContext::initFramebuffers() {
 	// create the framebuffers for the swapchain images. This will connect the
 	// render-pass to the images for rendering
 	VkFramebufferCreateInfo framebufferInfo =
-	    vkinit::framebuffer_create_info(_renderPass, _windowExtent);
+	    vk_init::framebufferCreateInfo(_renderPass, _windowExtent);
 
 	const uint32_t swapchainImageCount = _swapchainImages.size();
 	_framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
@@ -207,7 +207,7 @@ void VkContext::initCommands() {
 	// create a command pool for commands submitted to the graphics queue.
 	// we also want the pool to allow for resetting of individual command
 	// buffers
-	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(
+	VkCommandPoolCreateInfo commandPoolInfo = vk_init::commandPoolCreateInfo(
 	    _graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
 	);
 
@@ -217,7 +217,7 @@ void VkContext::initCommands() {
 
 	// allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo =
-	    vkinit::command_buffer_allocate_info(_commandPool, 1);
+	    vk_init::commandBufferAllocateInfo(_commandPool, 1);
 
 	VK_CHECK(
 	    vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer)
@@ -231,11 +231,11 @@ void VkContext::initSyncStructures() {
 	// we want the fence to start signalled so we can wait on it on the first
 	// frame
 	VkFenceCreateInfo fenceCreateInfo =
-	    vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+	    vk_init::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
 	VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
 
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vk_init::semaphoreCreateInfo();
 
 	VK_CHECK(vkCreateSemaphore(
 	    _device, &semaphoreCreateInfo, nullptr, &_presentSemaphore

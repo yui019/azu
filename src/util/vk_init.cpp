@@ -1,6 +1,6 @@
-#include "vk_initializers.h"
+#include "vk_init.h"
 
-VkCommandPoolCreateInfo vkinit::command_pool_create_info(
+VkCommandPoolCreateInfo vk_init::commandPoolCreateInfo(
     uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags /*= 0*/
 ) {
 	VkCommandPoolCreateInfo info = {};
@@ -11,7 +11,7 @@ VkCommandPoolCreateInfo vkinit::command_pool_create_info(
 	return info;
 }
 
-VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(
+VkCommandBufferAllocateInfo vk_init::commandBufferAllocateInfo(
     VkCommandPool pool, uint32_t count /*= 1*/,
     VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/
 ) {
@@ -26,7 +26,7 @@ VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(
 }
 
 VkCommandBufferBeginInfo
-vkinit::command_buffer_begin_info(VkCommandBufferUsageFlags flags /*= 0*/) {
+vk_init::commandBufferBeginInfo(VkCommandBufferUsageFlags flags /*= 0*/) {
 	VkCommandBufferBeginInfo info = {};
 	info.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	info.pNext                    = nullptr;
@@ -37,7 +37,7 @@ vkinit::command_buffer_begin_info(VkCommandBufferUsageFlags flags /*= 0*/) {
 }
 
 VkFramebufferCreateInfo
-vkinit::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D extent) {
+vk_init::framebufferCreateInfo(VkRenderPass renderPass, VkExtent2D extent) {
 	VkFramebufferCreateInfo info = {};
 	info.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	info.pNext                   = nullptr;
@@ -51,7 +51,7 @@ vkinit::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D extent) {
 	return info;
 }
 
-VkFenceCreateInfo vkinit::fence_create_info(VkFenceCreateFlags flags /*= 0*/) {
+VkFenceCreateInfo vk_init::fenceCreateInfo(VkFenceCreateFlags flags /*= 0*/) {
 	VkFenceCreateInfo info = {};
 	info.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	info.pNext             = nullptr;
@@ -62,7 +62,7 @@ VkFenceCreateInfo vkinit::fence_create_info(VkFenceCreateFlags flags /*= 0*/) {
 }
 
 VkSemaphoreCreateInfo
-vkinit::semaphore_create_info(VkSemaphoreCreateFlags flags /*= 0*/) {
+vk_init::semaphoreCreateInfo(VkSemaphoreCreateFlags flags /*= 0*/) {
 	VkSemaphoreCreateInfo info = {};
 	info.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	info.pNext                 = nullptr;
@@ -70,7 +70,7 @@ vkinit::semaphore_create_info(VkSemaphoreCreateFlags flags /*= 0*/) {
 	return info;
 }
 
-VkSubmitInfo vkinit::submit_info(VkCommandBuffer *cmd) {
+VkSubmitInfo vk_init::submitInfo(VkCommandBuffer *cmd) {
 	VkSubmitInfo info = {};
 	info.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	info.pNext        = nullptr;
@@ -86,7 +86,7 @@ VkSubmitInfo vkinit::submit_info(VkCommandBuffer *cmd) {
 	return info;
 }
 
-VkPresentInfoKHR vkinit::present_info() {
+VkPresentInfoKHR vk_init::presentInfo() {
 	VkPresentInfoKHR info = {};
 	info.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	info.pNext            = nullptr;
@@ -100,7 +100,7 @@ VkPresentInfoKHR vkinit::present_info() {
 	return info;
 }
 
-VkRenderPassBeginInfo vkinit::renderpass_begin_info(
+VkRenderPassBeginInfo vk_init::renderPassBeginInfo(
     VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer
 ) {
 	VkRenderPassBeginInfo info = {};

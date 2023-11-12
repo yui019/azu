@@ -1,6 +1,8 @@
 src = files(
 	'main.cpp',
 	'azu.cpp',
-	'vk_context.cpp',
-	'vk_initializers.cpp'
+
+	'vk_context/init.cpp',
+
+	'util/vk_init.cpp'
 )

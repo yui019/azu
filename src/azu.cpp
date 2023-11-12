@@ -1,6 +1,6 @@
 #include "azu.h"
 
-#include "util.h"
+#include "util/util.h"
 #include "SDL_error.h"
 #include <vulkan/vulkan.h>
 
