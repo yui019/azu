@@ -1,4 +1,12 @@
 #include <cassert>
 
 // Use (void) to silence unused warnings.
-#define assertm(exp, msg) assert(((void)msg, exp))
+#define ASSERT(exp, msg) assert(((void)msg, exp))
+
+#define VK_CHECK(x)                                                            \
+	do {                                                                       \
+		VkResult err = x;                                                      \
+		if (err) {                                                             \
+			throw err;                                                         \
+		}                                                                      \
+	} while (0)

@@ -1,19 +1,12 @@
 #include "vk_context.h"
 
+#include "util.h"
 #include "VkBootstrap.h"
 #include "vk_initializers.h"
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan_core.h>
 
 using namespace azu;
-
-#define VK_CHECK(x)                                                            \
-	do {                                                                       \
-		VkResult err = x;                                                      \
-		if (err) {                                                             \
-			throw err;                                                         \
-		}                                                                      \
-	} while (0)
 
 VkContext::VkContext(
     SDL_Window *window, VkExtent2D windowExtent, bool useValidationLayers
@@ -139,7 +132,6 @@ void VkContext::initSwapchain() {
 	_swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	_swapchainImageFormat = vkbSwapchain.image_format;
-	throw VK_SUCCESS;
 }
 
 void VkContext::initDefaultRenderpass() {

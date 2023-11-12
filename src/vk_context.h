@@ -4,6 +4,14 @@
 
 namespace azu {
 class VkContext {
+	void initVulkan(SDL_Window *window, bool useValidationLayers);
+	void initSwapchain();
+	void initDefaultRenderpass();
+	void initFramebuffers();
+	void initCommands();
+	void initSyncStructures();
+
+  public:
 	VkInstance _instance                      = nullptr;
 	VkDebugUtilsMessengerEXT _debug_messenger = nullptr;
 	VkPhysicalDevice _chosenGPU               = nullptr;
@@ -30,14 +38,6 @@ class VkContext {
 
 	VkExtent2D _windowExtent;
 
-	void initVulkan(SDL_Window *window, bool useValidationLayers);
-	void initSwapchain();
-	void initDefaultRenderpass();
-	void initFramebuffers();
-	void initCommands();
-	void initSyncStructures();
-
-  public:
 	VkContext() {}
 
 	VkContext(
