@@ -14,5 +14,5 @@ AlignTrailingComments: Always
 AlignOperands: Align
 AlignArrayOfStructures: Left
 AlignEscapedNewlines: Right
-AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: Align
 BreakAfterAttributes: Always

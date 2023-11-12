@@ -36,8 +36,8 @@ vk_init::commandBufferBeginInfo(VkCommandBufferUsageFlags flags /*= 0*/) {
 	return info;
 }
 
-VkFramebufferCreateInfo
-vk_init::framebufferCreateInfo(VkRenderPass renderPass, VkExtent2D extent) {
+VkFramebufferCreateInfo vk_init::framebufferCreateInfo(VkRenderPass renderPass,
+                                                       VkExtent2D extent) {
 	VkFramebufferCreateInfo info = {};
 	info.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	info.pNext                   = nullptr;
@@ -100,9 +100,9 @@ VkPresentInfoKHR vk_init::presentInfo() {
 	return info;
 }
 
-VkRenderPassBeginInfo vk_init::renderPassBeginInfo(
-    VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer
-) {
+VkRenderPassBeginInfo vk_init::renderPassBeginInfo(VkRenderPass renderPass,
+                                                   VkExtent2D windowExtent,
+                                                   VkFramebuffer framebuffer) {
 	VkRenderPassBeginInfo info = {};
 	info.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	info.pNext                 = nullptr;

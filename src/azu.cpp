@@ -11,10 +11,9 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 		throw SDL_GetError();
 	}
 
-	window = SDL_CreateWindow(
-	    title.data(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width,
-	    height, SDL_WINDOW_VULKAN
-	);
+	window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
+	                          SDL_WINDOWPOS_UNDEFINED, width, height,
+	                          SDL_WINDOW_VULKAN);
 	if (window == NULL)
 		throw SDL_GetError();
 
@@ -28,17 +27,15 @@ Context::~Context() {
 void draw(Context &context) {
 	// wait until the GPU has finished rendering the last frame. Timeout of 1
 	// second
-	VK_CHECK(vkWaitForFences(
-	    context.vk._device, 1, &context.vk._renderFence, true, 1000000000
-	));
+	VK_CHECK(vkWaitForFences(context.vk._device, 1, &context.vk._renderFence,
+	                         true, 1000000000));
 	VK_CHECK(vkResetFences(context.vk._device, 1, &context.vk._renderFence));
 
 	// request image from the swapchain, one second timeout
 	uint32_t swapchainImageIndex;
-	VK_CHECK(vkAcquireNextImageKHR(
-	    context.vk._device, context.vk._swapchain, 1000000000,
-	    context.vk._presentSemaphore, nullptr, &swapchainImageIndex
-	));
+	VK_CHECK(vkAcquireNextImageKHR(context.vk._device, context.vk._swapchain,
+	                               1000000000, context.vk._presentSemaphore,
+	                               nullptr, &swapchainImageIndex));
 
 	// now that we are sure that the commands finished executing, we can safely
 	// reset the command buffer to begin recording again.
@@ -116,9 +113,8 @@ void draw(Context &context) {
 
 	// submit command buffer to the queue and execute it.
 	//  _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(
-	    context.vk._graphicsQueue, 1, &submit, context.vk._renderFence
-	));
+	VK_CHECK(vkQueueSubmit(context.vk._graphicsQueue, 1, &submit,
+	                       context.vk._renderFence));
 
 	// this will put the image we just rendered into the visible window.
 	// we want to wait on the _renderSemaphore for that,

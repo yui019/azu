@@ -7,9 +7,8 @@
 
 using namespace azu;
 
-VkContext::VkContext(
-    SDL_Window *window, VkExtent2D windowExtent, bool useValidationLayers
-) {
+VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
+                     bool useValidationLayers) {
 	_windowExtent = windowExtent;
 
 	initVulkan(window, useValidationLayers);
@@ -150,8 +149,8 @@ void VkContext::initDefaultRenderpass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies   = &dependency;
 
-	VK_CHECK(vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass)
-	);
+	VK_CHECK(
+	    vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass));
 }
 
 void VkContext::initFramebuffers() {
@@ -166,9 +165,8 @@ void VkContext::initFramebuffers() {
 	for (uint32_t i = 0; i < swapchainImageCount; i++) {
 
 		framebufferInfo.pAttachments = &_swapchainImageViews[i];
-		VK_CHECK(vkCreateFramebuffer(
-		    _device, &framebufferInfo, nullptr, &_framebuffers[i]
-		));
+		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr,
+		                             &_framebuffers[i]));
 	}
 }
 
@@ -177,20 +175,17 @@ void VkContext::initCommands() {
 	// we also want the pool to allow for resetting of individual command
 	// buffers
 	VkCommandPoolCreateInfo commandPoolInfo = vk_init::commandPoolCreateInfo(
-	    _graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-	);
+	    _graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 	VK_CHECK(
-	    vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool)
-	);
+	    vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
 
 	// allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo =
 	    vk_init::commandBufferAllocateInfo(_commandPool, 1);
 
 	VK_CHECK(
-	    vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer)
-	);
+	    vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
 }
 
 void VkContext::initSyncStructures() {
@@ -206,10 +201,8 @@ void VkContext::initSyncStructures() {
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vk_init::semaphoreCreateInfo();
 
-	VK_CHECK(vkCreateSemaphore(
-	    _device, &semaphoreCreateInfo, nullptr, &_presentSemaphore
-	));
-	VK_CHECK(vkCreateSemaphore(
-	    _device, &semaphoreCreateInfo, nullptr, &_renderSemaphore
-	));
+	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
+	                           &_presentSemaphore));
+	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
+	                           &_renderSemaphore));
 }

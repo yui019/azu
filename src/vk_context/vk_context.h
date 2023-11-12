@@ -40,9 +40,8 @@ class VkContext {
 
 	VkContext() {}
 
-	VkContext(
-	    SDL_Window *window, VkExtent2D windowExtent, bool useValidationLayers
-	);
+	VkContext(SDL_Window *window, VkExtent2D windowExtent,
+	          bool useValidationLayers);
 
 	VkContext(const VkContext &other)            = delete;
 	VkContext &operator=(const VkContext &other) = delete;
