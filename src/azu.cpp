@@ -85,7 +85,7 @@ void draw(Context &context) {
 	// rendering commands
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 	                  context.vk._trianglePipeline);
-	vkCmdDraw(cmd, 3, 1, 0, 0);
+	vkCmdDraw(cmd, 6, 1, 0, 0);
 
 	// finalize the render pass
 	vkCmdEndRenderPass(cmd);
