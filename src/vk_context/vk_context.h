@@ -1,4 +1,5 @@
 #include <SDL.h>
+#include <optional>
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -10,6 +11,10 @@ class VkContext {
 	void initFramebuffers();
 	void initCommands();
 	void initSyncStructures();
+	void initPipelines();
+
+	std::optional<VkShaderModule>
+	loadShaderModuleFromFile(const char *path) const;
 
   public:
 	VkInstance _instance                      = nullptr;
@@ -35,6 +40,9 @@ class VkContext {
 	std::vector<VkFramebuffer> _framebuffers;
 	std::vector<VkImage> _swapchainImages;
 	std::vector<VkImageView> _swapchainImageViews;
+
+	VkPipelineLayout _trianglePipelineLayout;
+	VkPipeline _trianglePipeline;
 
 	VkExtent2D _windowExtent;
 
@@ -71,6 +79,8 @@ class VkContext {
 		std::swap(_framebuffers, other._framebuffers);
 		std::swap(_swapchainImages, other._swapchainImages);
 		std::swap(_swapchainImageViews, other._swapchainImageViews);
+		std::swap(_trianglePipelineLayout, other._trianglePipelineLayout);
+		std::swap(_trianglePipeline, other._trianglePipeline);
 		std::swap(_windowExtent, other._windowExtent);
 
 		return *this;

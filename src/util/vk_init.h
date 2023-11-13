@@ -30,4 +30,21 @@ VkRenderPassBeginInfo renderPassBeginInfo(VkRenderPass renderPass,
                                           VkExtent2D windowExtent,
                                           VkFramebuffer framebuffer);
 
+VkPipelineShaderStageCreateInfo
+pipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
+                              VkShaderModule shaderModule);
+
+VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo();
+
+VkPipelineInputAssemblyStateCreateInfo
+pipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology);
+
+VkPipelineRasterizationStateCreateInfo
+pipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode);
+
+VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo();
+
+VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
+
+VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo();
 } // namespace vk_init

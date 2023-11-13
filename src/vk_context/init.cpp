@@ -1,9 +1,11 @@
 #include "vk_context.h"
 
 #include "../util/util.h"
-#include "VkBootstrap.h"
 #include "../util/vk_init.h"
+#include "../vk_pipeline/vk_pipeline.h"
+#include "VkBootstrap.h"
 #include <SDL_vulkan.h>
+#include <cstdio>
 
 using namespace azu;
 
@@ -17,6 +19,7 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	initFramebuffers();
 	initCommands();
 	initSyncStructures();
+	initPipelines();
 }
 
 void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
@@ -205,4 +208,87 @@ void VkContext::initSyncStructures() {
 	                           &_presentSemaphore));
 	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
 	                           &_renderSemaphore));
+}
+
+void VkContext::initPipelines() {
+	auto triangleFragShader =
+	    loadShaderModuleFromFile("./shaders/triangle.frag.spv");
+
+	if (!triangleFragShader) {
+		printf("FAILED to build triangle fragment shader.\n");
+		return;
+	} else {
+		printf("SUCCESSFULLY built triangle fragment shader.\n");
+	}
+
+	auto triangleVertShader =
+	    loadShaderModuleFromFile("./shaders/triangle.vert.spv");
+
+	if (!triangleVertShader) {
+		printf("FAILED to build triangle vertex shader.\n");
+		return;
+	} else {
+		printf("SUCCESSFULLY built triangle vertex shader.\n");
+	}
+
+	// build the pipeline layout that controls the inputs/outputs of the shader
+	// we are not using descriptor sets or other systems yet, so no need to use
+	// anything other than empty default
+	VkPipelineLayoutCreateInfo pipeline_layout_info =
+	    vk_init::pipelineLayoutCreateInfo();
+
+	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr,
+	                                &_trianglePipelineLayout));
+
+	// build the stage-create-info for both vertex and fragment stages. This
+	// lets the pipeline know the shader modules per stage
+	PipelineBuilder pipelineBuilder;
+
+	pipelineBuilder._shaderStages.push_back(
+	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
+	                                           triangleVertShader.value()));
+
+	pipelineBuilder._shaderStages.push_back(
+	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
+	                                           triangleFragShader.value()));
+
+	// vertex input controls how to read vertices from vertex buffers. We aren't
+	// using it yet
+	pipelineBuilder._vertexInputInfo =
+	    vk_init::pipelineVertexInputStateCreateInfo();
+
+	// input assembly is the configuration for drawing triangle lists, strips,
+	// or individual points. we are just going to draw triangle list
+	pipelineBuilder._inputAssembly =
+	    vk_init::pipelineInputAssemblyStateCreateInfo(
+	        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+	// build viewport and scissor from the swapchain extents
+	pipelineBuilder._viewport.x        = 0.0f;
+	pipelineBuilder._viewport.y        = 0.0f;
+	pipelineBuilder._viewport.width    = (float)_windowExtent.width;
+	pipelineBuilder._viewport.height   = (float)_windowExtent.height;
+	pipelineBuilder._viewport.minDepth = 0.0f;
+	pipelineBuilder._viewport.maxDepth = 1.0f;
+
+	pipelineBuilder._scissor.offset = {0, 0};
+	pipelineBuilder._scissor.extent = _windowExtent;
+
+	// configure the rasterizer to draw filled triangles
+	pipelineBuilder._rasterizer =
+	    vk_init::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
+
+	// we don't use multisampling, so just run the default one
+	pipelineBuilder._multisampling =
+	    vk_init::pipelineMultisampleStateCreateInfo();
+
+	// a single blend attachment with no blending and writing to RGBA
+	pipelineBuilder._colorBlendAttachment =
+	    vk_init::pipelineColorBlendAttachmentState();
+
+	// use the triangle layout we created
+	pipelineBuilder._pipelineLayout = _trianglePipelineLayout;
+
+	// finally build the pipeline
+	_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
 }

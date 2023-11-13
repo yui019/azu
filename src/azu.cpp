@@ -82,6 +82,11 @@ void draw(Context &context) {
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+	// rendering commands
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	                  context.vk._trianglePipeline);
+	vkCmdDraw(cmd, 3, 1, 0, 0);
+
 	// finalize the render pass
 	vkCmdEndRenderPass(cmd);
 	// finalize the command buffer (we can no longer add commands, but it can
