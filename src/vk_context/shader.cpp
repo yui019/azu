@@ -4,8 +4,6 @@
 #include <optional>
 #include <stdexcept>
 
-using namespace azu;
-
 std::optional<VkShaderModule>
 VkContext::loadShaderModuleFromFile(const char *path) const {
 	// open the file. With cursor at the end

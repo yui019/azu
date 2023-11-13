@@ -7,8 +7,6 @@
 #include <SDL_vulkan.h>
 #include <cstdio>
 
-using namespace azu;
-
 VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
                      bool useValidationLayers) {
 	_windowExtent = windowExtent;

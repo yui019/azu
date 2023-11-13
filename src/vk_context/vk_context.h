@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-namespace azu {
 class VkContext {
 	void initVulkan(SDL_Window *window, bool useValidationLayers);
 	void initSwapchain();
@@ -88,4 +87,3 @@ class VkContext {
 
 	~VkContext();
 };
-} // namespace azu
