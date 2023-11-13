@@ -2,6 +2,8 @@
 #include <optional>
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <deque>
+#include <functional>
 
 class VkContext {
 	void initVulkan(SDL_Window *window, bool useValidationLayers);
@@ -14,6 +16,24 @@ class VkContext {
 
 	std::optional<VkShaderModule>
 	loadShaderModuleFromFile(const char *path) const;
+
+	struct DeletionQueue {
+		std::deque<std::function<void(const VkContext &context)>> deletors;
+
+		void push_function(std::function<void(const VkContext &)> &&function) {
+			deletors.push_back(function);
+		}
+
+		void flush(const VkContext &context) {
+			for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+				(*it)(context);
+			}
+
+			deletors.clear();
+		}
+	};
+
+	DeletionQueue _deletionQueue;
 
   public:
 	VkInstance _instance                      = nullptr;
@@ -81,6 +101,7 @@ class VkContext {
 		std::swap(_trianglePipelineLayout, other._trianglePipelineLayout);
 		std::swap(_trianglePipeline, other._trianglePipeline);
 		std::swap(_windowExtent, other._windowExtent);
+		std::swap(_deletionQueue, other._deletionQueue);
 
 		return *this;
 	}

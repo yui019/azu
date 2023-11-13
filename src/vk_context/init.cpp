@@ -101,6 +101,10 @@ void VkContext::initSwapchain() {
 	_swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	_swapchainImageFormat = vkbSwapchain.image_format;
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroySwapchainKHR(ctx._device, ctx._swapchain, nullptr);
+	});
 }
 
 void VkContext::initDefaultRenderpass() {
@@ -152,6 +156,10 @@ void VkContext::initDefaultRenderpass() {
 
 	VK_CHECK(
 	    vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass));
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyRenderPass(ctx._device, ctx._renderPass, nullptr);
+	});
 }
 
 void VkContext::initFramebuffers() {
@@ -164,11 +172,18 @@ void VkContext::initFramebuffers() {
 	_framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
 
 	for (uint32_t i = 0; i < swapchainImageCount; i++) {
-
 		framebufferInfo.pAttachments = &_swapchainImageViews[i];
 		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr,
 		                             &_framebuffers[i]));
 	}
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		for (uint32_t i = 0; i < ctx._framebuffers.size(); i++) {
+			vkDestroyFramebuffer(ctx._device, ctx._framebuffers[i], nullptr);
+			vkDestroyImageView(ctx._device, ctx._swapchainImageViews[i],
+			                   nullptr);
+		}
+	});
 }
 
 void VkContext::initCommands() {
@@ -187,6 +202,10 @@ void VkContext::initCommands() {
 
 	VK_CHECK(
 	    vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyCommandPool(ctx._device, ctx._commandPool, nullptr);
+	});
 }
 
 void VkContext::initSyncStructures() {
@@ -200,12 +219,21 @@ void VkContext::initSyncStructures() {
 
 	VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
 
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyFence(ctx._device, ctx._renderFence, nullptr);
+	});
+
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vk_init::semaphoreCreateInfo();
 
 	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
 	                           &_presentSemaphore));
 	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
 	                           &_renderSemaphore));
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroySemaphore(ctx._device, ctx._presentSemaphore, nullptr);
+		vkDestroySemaphore(ctx._device, ctx._renderSemaphore, nullptr);
+	});
 }
 
 void VkContext::initPipelines() {
@@ -289,4 +317,16 @@ void VkContext::initPipelines() {
 
 	// finally build the pipeline
 	_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
+
+	vkDestroyShaderModule(_device, triangleFragShader.value(), nullptr);
+	vkDestroyShaderModule(_device, triangleVertShader.value(), nullptr);
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		// destroy the 2 pipelines we have created
+		vkDestroyPipeline(ctx._device, ctx._trianglePipeline, nullptr);
+
+		// destroy the pipeline layout that they use
+		vkDestroyPipelineLayout(ctx._device, ctx._trianglePipelineLayout,
+		                        nullptr);
+	});
 }
