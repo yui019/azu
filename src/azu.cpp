@@ -11,17 +11,17 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 		throw SDL_GetError();
 	}
 
-	window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
-	                          SDL_WINDOWPOS_UNDEFINED, width, height,
-	                          SDL_WINDOW_VULKAN);
-	if (window == NULL)
+	_window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
+	                           SDL_WINDOWPOS_UNDEFINED, width, height,
+	                           SDL_WINDOW_VULKAN);
+	if (_window == NULL)
 		throw SDL_GetError();
 
-	vk = VkContext(window, VkExtent2D{width, height}, true);
+	vk = VkContext(_window, VkExtent2D{width, height}, true);
 }
 
 Context::~Context() {
-	SDL_DestroyWindow(window);
+	SDL_DestroyWindow(_window);
 }
 
 void draw(Context &context) {

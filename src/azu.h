@@ -6,8 +6,9 @@
 
 namespace azu {
 class Context {
+	SDL_Window *_window;
+
   public:
-	SDL_Window *window;
 	VkContext vk;
 	uint32_t frameNumber = 0;
 
