@@ -224,3 +224,13 @@ VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo() {
 	info.pPushConstantRanges    = nullptr;
 	return info;
 }
+
+VkBufferCreateInfo vk_init::bufferCreateInfo(uint32_t size,
+                                             VkBufferUsageFlags usage) {
+	VkBufferCreateInfo info = {};
+	info.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	info.size               = size;
+	info.usage              = usage;
+
+	return info;
+}

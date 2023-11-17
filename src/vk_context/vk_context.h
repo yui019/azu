@@ -1,3 +1,4 @@
+#include "vk_mem_alloc.h"
 #include <SDL.h>
 #include <optional>
 #include <vulkan/vulkan.h>
@@ -64,6 +65,8 @@ class VkContext {
 	VkPipeline _trianglePipeline;
 
 	VkExtent2D _windowExtent;
+
+	VmaAllocator _allocator;
 
 	VkContext() {}
 

@@ -10,10 +10,14 @@ cmake = import('cmake')
 vk_bootstrap_proj = cmake.subproject('vk-bootstrap')
 vk_bootstrap_dep = vk_bootstrap_proj.dependency('vk-bootstrap')
 
+vma_proj = cmake.subproject('VulkanMemoryAllocator')
+vma_dep = vma_proj.dependency('VulkanMemoryAllocator')
+
 deps = [
   dependency('sdl2'),
   dependency('vulkan'),
-  vk_bootstrap_dep
+  vk_bootstrap_dep,
+  vma_dep
 ]
 
 

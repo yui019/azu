@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace vk_init {
 
@@ -47,4 +49,6 @@ VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo();
 VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
 
 VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo();
+
+VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
 } // namespace vk_init

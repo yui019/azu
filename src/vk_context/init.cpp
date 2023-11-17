@@ -1,3 +1,4 @@
+#define VMA_IMPLEMENTATION
 #include "vk_context.h"
 
 #include "../util/util.h"
@@ -81,6 +82,16 @@ void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	_graphicsQueue       = graphicsQueueResult.value();
 	_graphicsQueueFamily = graphicsQueueFamilyResult.value();
+
+	// initialize the memory allocator
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice         = _chosenGPU;
+	allocatorInfo.device                 = _device;
+	allocatorInfo.instance               = _instance;
+	vmaCreateAllocator(&allocatorInfo, &_allocator);
+
+	_deletionQueue.push_function(
+	    [](const VkContext &ctx) { vmaDestroyAllocator(ctx._allocator); });
 }
 
 void VkContext::initSwapchain() {
