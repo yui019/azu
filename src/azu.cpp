@@ -18,7 +18,8 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 	if (_window == NULL)
 		throw SDL_GetError();
 
-	projectionMatrix = glm::ortho(0.0, (double)width, (double)height, 0.0);
+	// inverted top and bottom because... uhhh idk
+	projectionMatrix = glm::ortho(0.0, (double)width, 0.0, (double)height);
 
 	vk = VkContext(_window, VkExtent2D{width, height}, true);
 }
@@ -94,7 +95,8 @@ void draw(Context &context) {
 	                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4,
 	                   &context.projectionMatrix);
 
-	vkCmdDraw(cmd, 6, 1, 0, 0);
+	const uint32_t QUAD_COUNT = 4;
+	vkCmdDraw(cmd, 6 * QUAD_COUNT, 1, 0, 0);
 
 	// finalize the render pass
 	vkCmdEndRenderPass(cmd);
