@@ -1,5 +1,6 @@
 #include "vk_context/vk_context.h"
 
+#include "glm/glm.hpp"
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -11,6 +12,7 @@ class Context {
   public:
 	VkContext vk;
 	uint32_t frameNumber = 0;
+	glm::mat4 projectionMatrix;
 
 	Context(std::string_view title, uint32_t width, uint32_t height);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "span.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -48,7 +50,8 @@ VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo();
 
 VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
 
-VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo();
+VkPipelineLayoutCreateInfo
+pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges);
 
 VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
 } // namespace vk_init

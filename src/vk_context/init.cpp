@@ -271,8 +271,12 @@ void VkContext::initPipelines() {
 	// build the pipeline layout that controls the inputs/outputs of the shader
 	// we are not using descriptor sets or other systems yet, so no need to use
 	// anything other than empty default
+
+	VkPushConstantRange pushConstantRanges[] = {
+	    {VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4}
+    };
 	VkPipelineLayoutCreateInfo pipeline_layout_info =
-	    vk_init::pipelineLayoutCreateInfo();
+	    vk_init::pipelineLayoutCreateInfo(pushConstantRanges);
 
 	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr,
 	                                &_trianglePipelineLayout));

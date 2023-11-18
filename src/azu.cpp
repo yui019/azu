@@ -2,6 +2,7 @@
 
 #include "util/util.h"
 #include "SDL_error.h"
+#include "glm/ext/matrix_clip_space.hpp"
 #include <vulkan/vulkan.h>
 
 using namespace azu;
@@ -16,6 +17,8 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 	                           SDL_WINDOW_VULKAN);
 	if (_window == NULL)
 		throw SDL_GetError();
+
+	projectionMatrix = glm::ortho(0.0, (double)width, (double)height, 0.0);
 
 	vk = VkContext(_window, VkExtent2D{width, height}, true);
 }
@@ -83,8 +86,14 @@ void draw(Context &context) {
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	// rendering commands
+
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 	                  context.vk._trianglePipeline);
+
+	vkCmdPushConstants(cmd, context.vk._trianglePipelineLayout,
+	                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4,
+	                   &context.projectionMatrix);
+
 	vkCmdDraw(cmd, 6, 1, 0, 0);
 
 	// finalize the render pass

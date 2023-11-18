@@ -211,7 +211,8 @@ vk_init::pipelineColorBlendAttachmentState() {
 	return colorBlendAttachment;
 }
 
-VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo() {
+VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo(
+    tcb::span<VkPushConstantRange> pushConstantRanges) {
 	VkPipelineLayoutCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	info.pNext = nullptr;
@@ -220,8 +221,8 @@ VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo() {
 	info.flags                  = 0;
 	info.setLayoutCount         = 0;
 	info.pSetLayouts            = nullptr;
-	info.pushConstantRangeCount = 0;
-	info.pPushConstantRanges    = nullptr;
+	info.pushConstantRangeCount = pushConstantRanges.size();
+	info.pPushConstantRanges    = pushConstantRanges.data();
 	return info;
 }
 
