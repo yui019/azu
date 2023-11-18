@@ -105,6 +105,7 @@ class VkContext {
 		std::swap(_trianglePipeline, other._trianglePipeline);
 		std::swap(_windowExtent, other._windowExtent);
 		std::swap(_deletionQueue, other._deletionQueue);
+		std::swap(_allocator, other._allocator);
 
 		return *this;
 	}
