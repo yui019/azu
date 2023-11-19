@@ -60,8 +60,6 @@ void draw(Context &context) {
 
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
-	// make a clear-color from frame number. This will flash with a 120*pi frame
-	// period.
 	VkClearValue clearValue;
 	clearValue.color = {
 	    {0.0f, 0.0f, 0.0, 1.0f}
