@@ -8,20 +8,18 @@ pushConstants;
 layout(location = 0) out vec3 outFragColor;
 
 struct QuadData {
-	vec3 pos;
-	vec2 size;
-	vec3 color;
+	vec4 pos;
+	vec4 size;
+	vec4 color;
 };
 
-const QuadData QUADS[] = {
-    {vec3(5.0,   5.0,  0), vec2(100, 70), vec3(1.0, 0.0, 0.0)},
-    {vec3(110.0, 5.0,  0), vec2(100, 70), vec3(0.0, 1.0, 0.0)},
-    {vec3(5.0,   80.0, 0), vec2(100, 70), vec3(0.0, 0.0, 1.0)},
-    {vec3(120.0, 90.0, 0), vec2(100, 70), vec3(1.0, 1.0, 1.0)},
-};
+layout(std140, set = 0, binding = 0) readonly buffer QuadsBuffer {
+	QuadData quads[];
+}
+quadsBuffer;
 
 void main() {
-	QuadData q = QUADS[gl_VertexIndex / 6];
+	QuadData q = quadsBuffer.quads[gl_VertexIndex / 6];
 
 	// const array of positions for the triangle
 	const vec3 positions[6] = vec3[6](
@@ -37,5 +35,5 @@ void main() {
 	// output the position of each vertex
 	gl_Position = pushConstants.projectionMatrix *
 	              vec4(positions[gl_VertexIndex % 6], 1.0f);
-	outFragColor = q.color;
+	outFragColor = q.color.rgb;
 }

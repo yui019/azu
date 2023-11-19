@@ -1,5 +1,6 @@
 #include "azu.h"
 
+#include "consts.h"
 #include "util/util.h"
 #include "SDL_error.h"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -91,11 +92,14 @@ void draw(Context &context) {
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 	                  context.vk._trianglePipeline);
 
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	                        context.vk._trianglePipelineLayout, 0, 1,
+	                        &context.vk._globalDescriptorSet, 0, nullptr);
+
 	vkCmdPushConstants(cmd, context.vk._trianglePipelineLayout,
 	                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4,
 	                   &context.projectionMatrix);
 
-	const uint32_t QUAD_COUNT = 4;
 	vkCmdDraw(cmd, 6 * QUAD_COUNT, 1, 0, 0);
 
 	// finalize the render pass

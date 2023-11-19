@@ -1,3 +1,5 @@
+#include "quad_data.h"
+#include "../util/buffer.h"
 #include "vk_mem_alloc.h"
 #include <SDL.h>
 #include <optional>
@@ -13,6 +15,7 @@ class VkContext {
 	void initFramebuffers();
 	void initCommands();
 	void initSyncStructures();
+	void initDescriptors();
 	void initPipelines();
 
 	std::optional<VkShaderModule>
@@ -64,11 +67,17 @@ class VkContext {
 	VkPipelineLayout _trianglePipelineLayout;
 	VkPipeline _trianglePipeline;
 
+	VkDescriptorPool _globalDescriptorPool;
+	VkDescriptorSetLayout _globalDescriptorSetLayout;
+	VkDescriptorSet _globalDescriptorSet;
+
+	Buffer _quadsBuffer;
+
 	VkExtent2D _windowExtent;
 
 	VmaAllocator _allocator;
 
-	VkContext() {}
+	VkContext() = default;
 
 	VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	          bool useValidationLayers);
@@ -106,6 +115,10 @@ class VkContext {
 		std::swap(_windowExtent, other._windowExtent);
 		std::swap(_deletionQueue, other._deletionQueue);
 		std::swap(_allocator, other._allocator);
+		std::swap(_globalDescriptorPool, other._globalDescriptorPool);
+		std::swap(_globalDescriptorSetLayout, other._globalDescriptorSetLayout);
+		std::swap(_globalDescriptorSet, other._globalDescriptorSet);
+		std::swap(_quadsBuffer, other._quadsBuffer);
 
 		return *this;
 	}

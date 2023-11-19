@@ -1,6 +1,8 @@
 #define VMA_IMPLEMENTATION
 #include "vk_context.h"
 
+#include "quad_data.h"
+#include "../consts.h"
 #include "../util/util.h"
 #include "../util/vk_init.h"
 #include "../vk_pipeline/vk_pipeline.h"
@@ -18,7 +20,15 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	initFramebuffers();
 	initCommands();
 	initSyncStructures();
+	initDescriptors();
 	initPipelines();
+
+	void *data;
+	vmaMapMemory(_allocator, _quadsBuffer.allocation, &data);
+
+	memcpy(data, QUADS, sizeof(QUADS));
+
+	vmaUnmapMemory(_allocator, _quadsBuffer.allocation);
 }
 
 void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
@@ -247,6 +257,92 @@ void VkContext::initSyncStructures() {
 	});
 }
 
+void VkContext::initDescriptors() {
+	// CREATE DESCRIPTOR POOL
+
+	std::vector<VkDescriptorPoolSize> sizes = {
+	    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}
+    };
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags         = 0;
+	pool_info.maxSets       = 10;
+	pool_info.poolSizeCount = (uint32_t)sizes.size();
+	pool_info.pPoolSizes    = sizes.data();
+
+	vkCreateDescriptorPool(_device, &pool_info, nullptr,
+	                       &_globalDescriptorPool);
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyDescriptorPool(ctx._device, ctx._globalDescriptorPool,
+		                        nullptr);
+	});
+
+	// CREATE DESCRIPTOR SET LAYOUT
+
+	VkDescriptorSetLayoutBinding quadsBufferBinding = {};
+	quadsBufferBinding.binding                      = 0;
+	quadsBufferBinding.descriptorCount              = 1;
+	quadsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	quadsBufferBinding.stageFlags     = VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.pNext = nullptr;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings    = &quadsBufferBinding;
+	layoutInfo.flags        = 0;
+
+	vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
+	                            &_globalDescriptorSetLayout);
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyDescriptorSetLayout(ctx._device,
+		                             ctx._globalDescriptorSetLayout, nullptr);
+	});
+
+	// CREATE QUADS BUFFER
+
+	_quadsBuffer =
+	    Buffer(_allocator, INITIAL_QUADS_BUFFER_SIZE,
+	           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vmaDestroyBuffer(ctx._allocator, ctx._quadsBuffer.buffer,
+		                 ctx._quadsBuffer.allocation);
+	});
+
+	// ALLOCATE DESCRIPTOR SET
+
+	VkDescriptorSetAllocateInfo allocateInfo = {};
+	allocateInfo.pNext                       = nullptr;
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool     = _globalDescriptorPool;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.pSetLayouts        = &_globalDescriptorSetLayout;
+
+	vkAllocateDescriptorSets(_device, &allocateInfo, &_globalDescriptorSet);
+
+	// UPDATE DESCRIPTOR SET TO POINT TO QUADS BUFFER
+
+	VkDescriptorBufferInfo descriptorBufferInfo;
+	descriptorBufferInfo.buffer = _quadsBuffer.buffer;
+	descriptorBufferInfo.offset = 0;
+	descriptorBufferInfo.range  = INITIAL_QUADS_BUFFER_SIZE;
+
+	VkWriteDescriptorSet setWrite = {};
+	setWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	setWrite.pNext                = nullptr;
+	setWrite.dstBinding           = 0;
+	setWrite.dstSet               = _globalDescriptorSet;
+	setWrite.descriptorCount      = 1;
+	setWrite.descriptorType       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	setWrite.pBufferInfo          = &descriptorBufferInfo;
+
+	vkUpdateDescriptorSets(_device, 1, &setWrite, 0, nullptr);
+}
+
 void VkContext::initPipelines() {
 	auto triangleFragShader =
 	    loadShaderModuleFromFile("./shaders/triangle.frag.spv");
@@ -275,8 +371,10 @@ void VkContext::initPipelines() {
 	VkPushConstantRange pushConstantRanges[] = {
 	    {VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4}
     };
+	VkDescriptorSetLayout descriptorSetLayouts[] = {_globalDescriptorSetLayout};
 	VkPipelineLayoutCreateInfo pipeline_layout_info =
-	    vk_init::pipelineLayoutCreateInfo(pushConstantRanges);
+	    vk_init::pipelineLayoutCreateInfo(pushConstantRanges,
+	                                      descriptorSetLayouts);
 
 	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr,
 	                                &_trianglePipelineLayout));

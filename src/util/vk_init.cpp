@@ -212,15 +212,16 @@ vk_init::pipelineColorBlendAttachmentState() {
 }
 
 VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo(
-    tcb::span<VkPushConstantRange> pushConstantRanges) {
+    tcb::span<VkPushConstantRange> pushConstantRanges,
+    tcb::span<VkDescriptorSetLayout> descriptorSetLayouts) {
 	VkPipelineLayoutCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	info.pNext = nullptr;
 
 	// empty defaults
 	info.flags                  = 0;
-	info.setLayoutCount         = 0;
-	info.pSetLayouts            = nullptr;
+	info.setLayoutCount         = descriptorSetLayouts.size();
+	info.pSetLayouts            = descriptorSetLayouts.data();
 	info.pushConstantRangeCount = pushConstantRanges.size();
 	info.pPushConstantRanges    = pushConstantRanges.data();
 	return info;
@@ -230,6 +231,7 @@ VkBufferCreateInfo vk_init::bufferCreateInfo(uint32_t size,
                                              VkBufferUsageFlags usage) {
 	VkBufferCreateInfo info = {};
 	info.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	info.pNext              = nullptr;
 	info.size               = size;
 	info.usage              = usage;
 

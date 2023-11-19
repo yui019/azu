@@ -51,7 +51,8 @@ VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo();
 VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
 
 VkPipelineLayoutCreateInfo
-pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges);
+pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges,
+                         tcb::span<VkDescriptorSetLayout> descriptorSetLayouts);
 
 VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
 } // namespace vk_init
