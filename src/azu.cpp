@@ -63,9 +63,8 @@ void draw(Context &context) {
 	// make a clear-color from frame number. This will flash with a 120*pi frame
 	// period.
 	VkClearValue clearValue;
-	float flash      = abs(sin(context.frameNumber / 120.f));
 	clearValue.color = {
-	    {0.0f, 0.0f, flash, 1.0f}
+	    {0.0f, 0.0f, 0.0, 1.0f}
     };
 
 	// start the main renderpass.
