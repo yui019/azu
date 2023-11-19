@@ -1,3 +1,6 @@
+#ifndef VK_CONTEXT_H
+#define VK_CONTEXT_H
+
 #include "quad_data.h"
 #include "../util/buffer.h"
 #include "vk_mem_alloc.h"
@@ -9,17 +12,17 @@
 #include <functional>
 
 class VkContext {
-	void initVulkan(SDL_Window *window, bool useValidationLayers);
-	void initSwapchain();
-	void initDefaultRenderpass();
-	void initFramebuffers();
-	void initCommands();
-	void initSyncStructures();
-	void initDescriptors();
-	void initPipelines();
+	void _initVulkan(SDL_Window *window, bool useValidationLayers);
+	void _initSwapchain();
+	void _initDefaultRenderpass();
+	void _initFramebuffers();
+	void _initCommands();
+	void _initSyncStructures();
+	void _initDescriptors();
+	void _initPipelines();
 
 	std::optional<VkShaderModule>
-	loadShaderModuleFromFile(const char *path) const;
+	_loadShaderModuleFromFile(const char *path) const;
 
 	struct DeletionQueue {
 		std::deque<std::function<void(const VkContext &context)>> deletors;
@@ -64,8 +67,8 @@ class VkContext {
 	std::vector<VkImage> _swapchainImages;
 	std::vector<VkImageView> _swapchainImageViews;
 
-	VkPipelineLayout _trianglePipelineLayout;
-	VkPipeline _trianglePipeline;
+	VkPipelineLayout _pipelineLayout;
+	VkPipeline _pipeline;
 
 	VkDescriptorPool _globalDescriptorPool;
 	VkDescriptorSetLayout _globalDescriptorSetLayout;
@@ -110,8 +113,8 @@ class VkContext {
 		std::swap(_framebuffers, other._framebuffers);
 		std::swap(_swapchainImages, other._swapchainImages);
 		std::swap(_swapchainImageViews, other._swapchainImageViews);
-		std::swap(_trianglePipelineLayout, other._trianglePipelineLayout);
-		std::swap(_trianglePipeline, other._trianglePipeline);
+		std::swap(_pipelineLayout, other._pipelineLayout);
+		std::swap(_pipeline, other._pipeline);
 		std::swap(_windowExtent, other._windowExtent);
 		std::swap(_deletionQueue, other._deletionQueue);
 		std::swap(_allocator, other._allocator);
@@ -125,3 +128,5 @@ class VkContext {
 
 	~VkContext();
 };
+
+#endif // VK_CONTEXT_H

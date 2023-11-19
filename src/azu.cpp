@@ -36,21 +36,23 @@ void draw(Context &context) {
 	                         true, 1000000000));
 	VK_CHECK(vkResetFences(context.vk._device, 1, &context.vk._renderFence));
 
-	// request image from the swapchain, one second timeout
+	// request image from the swapchain (1 sec timeout) and signal
+	// _presentSemaphore
 	uint32_t swapchainImageIndex;
 	VK_CHECK(vkAcquireNextImageKHR(context.vk._device, context.vk._swapchain,
 	                               1000000000, context.vk._presentSemaphore,
 	                               nullptr, &swapchainImageIndex));
 
-	// now that we are sure that the commands finished executing, we can safely
-	// reset the command buffer to begin recording again.
 	VK_CHECK(vkResetCommandBuffer(context.vk._mainCommandBuffer, 0));
+
+	// BEGIN COMMAND BUFFER
+	// --------------------
 
 	// naming it cmd for shorter writing
 	VkCommandBuffer cmd = context.vk._mainCommandBuffer;
 
-	// begin the command buffer recording. We will use this command buffer
-	// exactly once, so we want to let Vulkan know that
+	// this command buffer will be used
+	// exactly once, so the usage_one_time flag is used
 	VkCommandBufferBeginInfo cmdBeginInfo = {};
 	cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmdBeginInfo.pNext = nullptr;
@@ -60,14 +62,15 @@ void draw(Context &context) {
 
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
+	// BEGIN RENDER PASS
+	// -----------------
+
+	// clear screen to black each frame
 	VkClearValue clearValue;
 	clearValue.color = {
 	    {0.0f, 0.0f, 0.0, 1.0f}
     };
 
-	// start the main renderpass.
-	// We will use the clear color from above, and the framebuffer of the index
-	// the swapchain gave us
 	VkRenderPassBeginInfo rpInfo = {};
 	rpInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpInfo.pNext                 = nullptr;
@@ -84,31 +87,31 @@ void draw(Context &context) {
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	// rendering commands
+	// RENDERING COMMANDS
+	// ------------------
 
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                  context.vk._trianglePipeline);
+	                  context.vk._pipeline);
 
 	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                        context.vk._trianglePipelineLayout, 0, 1,
+	                        context.vk._pipelineLayout, 0, 1,
 	                        &context.vk._globalDescriptorSet, 0, nullptr);
 
-	vkCmdPushConstants(cmd, context.vk._trianglePipelineLayout,
+	vkCmdPushConstants(cmd, context.vk._pipelineLayout,
 	                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4,
 	                   &context.projectionMatrix);
 
 	vkCmdDraw(cmd, 6 * QUAD_COUNT, 1, 0, 0);
 
-	// finalize the render pass
 	vkCmdEndRenderPass(cmd);
-	// finalize the command buffer (we can no longer add commands, but it can
-	// now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 
-	// prepare the submission to the queue.
-	// we want to wait on the _presentSemaphore, as that semaphore is signaled
-	// when the swapchain is ready we will signal the _renderSemaphore, to
-	// signal that rendering has finished
+	// SUBMIT TO QUEUE
+	// ---------------
+
+	// wait on _presentSemaphore, as that semaphore is signaled when the
+	// swapchain is ready
+	// signal _renderSemaphore, to say that rendering has finished
 
 	VkSubmitInfo submit = {};
 	submit.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -133,10 +136,13 @@ void draw(Context &context) {
 	VK_CHECK(vkQueueSubmit(context.vk._graphicsQueue, 1, &submit,
 	                       context.vk._renderFence));
 
-	// this will put the image we just rendered into the visible window.
-	// we want to wait on the _renderSemaphore for that,
-	// as it's necessary that drawing commands have finished before the image is
-	// displayed to the user
+	// PRESENT TO SWAPCHAIN
+	// --------------------
+
+	// this will put the rendered image into the visible window.
+	// I'm waiting on _renderSemaphore for that, which is signaled when the
+	// drawing commands submitted to the queue have finished executing
+
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext            = nullptr;
@@ -158,11 +164,8 @@ void azu::run(Context &context) {
 	SDL_Event e;
 	bool bQuit = false;
 
-	// main loop
 	while (!bQuit) {
-		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0) {
-			// close the window when user alt-f4s or clicks the X button
 			if (e.type == SDL_QUIT)
 				bQuit = true;
 		}

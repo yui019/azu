@@ -14,14 +14,14 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
                      bool useValidationLayers) {
 	_windowExtent = windowExtent;
 
-	initVulkan(window, useValidationLayers);
-	initSwapchain();
-	initDefaultRenderpass();
-	initFramebuffers();
-	initCommands();
-	initSyncStructures();
-	initDescriptors();
-	initPipelines();
+	_initVulkan(window, useValidationLayers);
+	_initSwapchain();
+	_initDefaultRenderpass();
+	_initFramebuffers();
+	_initCommands();
+	_initSyncStructures();
+	_initDescriptors();
+	_initPipelines();
 
 	void *data;
 	vmaMapMemory(_allocator, _quadsBuffer.allocation, &data);
@@ -31,10 +31,9 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	vmaUnmapMemory(_allocator, _quadsBuffer.allocation);
 }
 
-void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
+void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 	vkb::InstanceBuilder builder;
 
-	// make the vulkan instance, with basic debug features
 	auto vkbInstanceResult = builder.set_app_name("Azu Application")
 	                             .request_validation_layers(useValidationLayers)
 	                             .use_default_debug_messenger()
@@ -46,24 +45,19 @@ void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	vkb::Instance vkbInstance = vkbInstanceResult.value();
 
-	// grab the instance
 	_instance        = vkbInstance.instance;
 	_debug_messenger = vkbInstance.debug_messenger;
 
 	SDL_Vulkan_CreateSurface(window, _instance, &_surface);
 
-	// use vkbootstrap to select a gpu.
-	// We want a gpu that can write to the SDL surface and supports vulkan 1.2
 	vkb::PhysicalDeviceSelector selector{vkbInstance};
 	auto physicalDeviceResult =
-	    selector.set_minimum_version(1, 1).set_surface(_surface).select();
+	    selector.set_minimum_version(1, 3).set_surface(_surface).select();
 	if (!physicalDeviceResult) {
 		throw physicalDeviceResult.error();
 	}
 
 	vkb::PhysicalDevice physicalDevice = physicalDeviceResult.value();
-
-	// create the final vulkan device
 
 	vkb::DeviceBuilder deviceBuilder{physicalDevice};
 
@@ -74,11 +68,9 @@ void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	vkb::Device vkbDevice = vkbDeviceResult.value();
 
-	// Get the VkDevice handle used in the rest of a vulkan application
 	_device    = vkbDevice.device;
 	_chosenGPU = physicalDevice.physical_device;
 
-	// use vkbootstrap to get a Graphics queue and family
 	auto graphicsQueueResult = vkbDevice.get_queue(vkb::QueueType::graphics);
 	if (!graphicsQueueResult) {
 		throw graphicsQueueResult.error();
@@ -93,7 +85,9 @@ void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
 	_graphicsQueue       = graphicsQueueResult.value();
 	_graphicsQueueFamily = graphicsQueueFamilyResult.value();
 
-	// initialize the memory allocator
+	// MEMORY ALLOCATOR
+	// ----------------
+
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice         = _chosenGPU;
 	allocatorInfo.device                 = _device;
@@ -104,7 +98,7 @@ void VkContext::initVulkan(SDL_Window *window, bool useValidationLayers) {
 	    [](const VkContext &ctx) { vmaDestroyAllocator(ctx._allocator); });
 }
 
-void VkContext::initSwapchain() {
+void VkContext::_initSwapchain() {
 	vkb::SwapchainBuilder vkbSwapchainBuilder{_chosenGPU, _device, _surface};
 
 	vkb::Swapchain vkbSwapchain =
@@ -116,11 +110,9 @@ void VkContext::initSwapchain() {
 	        .build()
 	        .value();
 
-	// store swapchain and its related images
-	_swapchain           = vkbSwapchain.swapchain;
-	_swapchainImages     = vkbSwapchain.get_images().value();
-	_swapchainImageViews = vkbSwapchain.get_image_views().value();
-
+	_swapchain            = vkbSwapchain.swapchain;
+	_swapchainImages      = vkbSwapchain.get_images().value();
+	_swapchainImageViews  = vkbSwapchain.get_image_views().value();
 	_swapchainImageFormat = vkbSwapchain.image_format;
 
 	_deletionQueue.push_function([](const VkContext &ctx) {
@@ -128,13 +120,9 @@ void VkContext::initSwapchain() {
 	});
 }
 
-void VkContext::initDefaultRenderpass() {
-	// we define an attachment description for our main color image
-	// the attachment is loaded as "clear" when renderpass start
-	// the attachment is stored when renderpass ends
-	// the attachment layout starts as "undefined", and transitions to "Present"
-	// so its possible to display it we dont care about stencil, and dont use
-	// multisampling
+void VkContext::_initDefaultRenderpass() {
+	// COLOR ATTACHMENT
+	// ----------------
 
 	VkAttachmentDescription colorAttachment = {};
 	colorAttachment.format                  = _swapchainImageFormat;
@@ -150,14 +138,14 @@ void VkContext::initDefaultRenderpass() {
 	colorAttachmentRef.attachment            = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	// we are going to create 1 subpass, which is the minimum you can do
+	// SUBPASS
+	// -------
+
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments    = &colorAttachmentRef;
 
-	// 1 dependency, which is from "outside" into the subpass. And we can read
-	// or write color
 	VkSubpassDependency dependency = {};
 	dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass          = 0;
@@ -165,6 +153,9 @@ void VkContext::initDefaultRenderpass() {
 	dependency.srcAccessMask = 0;
 	dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	// CREATE RENDERPASS
+	// -----------------
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -183,9 +174,7 @@ void VkContext::initDefaultRenderpass() {
 	});
 }
 
-void VkContext::initFramebuffers() {
-	// create the framebuffers for the swapchain images. This will connect the
-	// render-pass to the images for rendering
+void VkContext::_initFramebuffers() {
 	VkFramebufferCreateInfo framebufferInfo =
 	    vk_init::framebufferCreateInfo(_renderPass, _windowExtent);
 
@@ -207,17 +196,13 @@ void VkContext::initFramebuffers() {
 	});
 }
 
-void VkContext::initCommands() {
-	// create a command pool for commands submitted to the graphics queue.
-	// we also want the pool to allow for resetting of individual command
-	// buffers
+void VkContext::_initCommands() {
 	VkCommandPoolCreateInfo commandPoolInfo = vk_init::commandPoolCreateInfo(
 	    _graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 	VK_CHECK(
 	    vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
 
-	// allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo =
 	    vk_init::commandBufferAllocateInfo(_commandPool, 1);
 
@@ -229,12 +214,11 @@ void VkContext::initCommands() {
 	});
 }
 
-void VkContext::initSyncStructures() {
-	// create syncronization structures
-	// one fence to control when the gpu has finished rendering the frame,
-	// and 2 semaphores to syncronize rendering with swapchain
-	// we want the fence to start signalled so we can wait on it on the first
-	// frame
+void VkContext::_initSyncStructures() {
+	// one fence to control when the gpu has finished rendering the frame, and 2
+	// semaphores to syncronize rendering with swapchain the fence starts
+	// signaled so I can wait on it on the first frame
+
 	VkFenceCreateInfo fenceCreateInfo =
 	    vk_init::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
@@ -257,8 +241,9 @@ void VkContext::initSyncStructures() {
 	});
 }
 
-void VkContext::initDescriptors() {
+void VkContext::_initDescriptors() {
 	// CREATE DESCRIPTOR POOL
+	// ----------------------
 
 	std::vector<VkDescriptorPoolSize> sizes = {
 	    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}
@@ -280,6 +265,7 @@ void VkContext::initDescriptors() {
 	});
 
 	// CREATE DESCRIPTOR SET LAYOUT
+	// ----------------------------
 
 	VkDescriptorSetLayoutBinding quadsBufferBinding = {};
 	quadsBufferBinding.binding                      = 0;
@@ -303,6 +289,7 @@ void VkContext::initDescriptors() {
 	});
 
 	// CREATE QUADS BUFFER
+	// -------------------
 
 	_quadsBuffer =
 	    Buffer(_allocator, INITIAL_QUADS_BUFFER_SIZE,
@@ -314,6 +301,7 @@ void VkContext::initDescriptors() {
 	});
 
 	// ALLOCATE DESCRIPTOR SET
+	// -----------------------
 
 	VkDescriptorSetAllocateInfo allocateInfo = {};
 	allocateInfo.pNext                       = nullptr;
@@ -325,6 +313,7 @@ void VkContext::initDescriptors() {
 	vkAllocateDescriptorSets(_device, &allocateInfo, &_globalDescriptorSet);
 
 	// UPDATE DESCRIPTOR SET TO POINT TO QUADS BUFFER
+	// ----------------------------------------------
 
 	VkDescriptorBufferInfo descriptorBufferInfo;
 	descriptorBufferInfo.buffer = _quadsBuffer.buffer;
@@ -343,9 +332,12 @@ void VkContext::initDescriptors() {
 	vkUpdateDescriptorSets(_device, 1, &setWrite, 0, nullptr);
 }
 
-void VkContext::initPipelines() {
+void VkContext::_initPipelines() {
+	// BUILD SHADERS
+	// -------------
+
 	auto triangleFragShader =
-	    loadShaderModuleFromFile("./shaders/triangle.frag.spv");
+	    _loadShaderModuleFromFile("./shaders/triangle.frag.spv");
 
 	if (!triangleFragShader) {
 		printf("FAILED to build triangle fragment shader.\n");
@@ -355,7 +347,7 @@ void VkContext::initPipelines() {
 	}
 
 	auto triangleVertShader =
-	    loadShaderModuleFromFile("./shaders/triangle.vert.spv");
+	    _loadShaderModuleFromFile("./shaders/triangle.vert.spv");
 
 	if (!triangleVertShader) {
 		printf("FAILED to build triangle vertex shader.\n");
@@ -364,9 +356,8 @@ void VkContext::initPipelines() {
 		printf("SUCCESSFULLY built triangle vertex shader.\n");
 	}
 
-	// build the pipeline layout that controls the inputs/outputs of the shader
-	// we are not using descriptor sets or other systems yet, so no need to use
-	// anything other than empty default
+	// CREATE PIPELINE LAYOUT
+	// ----------------------
 
 	VkPushConstantRange pushConstantRanges[] = {
 	    {VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4}
@@ -377,69 +368,60 @@ void VkContext::initPipelines() {
 	                                      descriptorSetLayouts);
 
 	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr,
-	                                &_trianglePipelineLayout));
+	                                &_pipelineLayout));
 
-	// build the stage-create-info for both vertex and fragment stages. This
-	// lets the pipeline know the shader modules per stage
+	// BUILD PIPELINE
+	// --------------
+
 	PipelineBuilder pipelineBuilder;
 
-	pipelineBuilder._shaderStages.push_back(
+	pipelineBuilder.shaderStages = {
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
-	                                           triangleVertShader.value()));
-
-	pipelineBuilder._shaderStages.push_back(
+	                                           triangleVertShader.value()),
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
-	                                           triangleFragShader.value()));
+	                                           triangleFragShader.value())};
 
-	// vertex input controls how to read vertices from vertex buffers. We aren't
-	// using it yet
-	pipelineBuilder._vertexInputInfo =
+	pipelineBuilder.vertexInputInfo =
 	    vk_init::pipelineVertexInputStateCreateInfo();
 
-	// input assembly is the configuration for drawing triangle lists, strips,
-	// or individual points. we are just going to draw triangle list
-	pipelineBuilder._inputAssembly =
+	pipelineBuilder.inputAssembly =
 	    vk_init::pipelineInputAssemblyStateCreateInfo(
 	        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-	// build viewport and scissor from the swapchain extents
-	pipelineBuilder._viewport.x        = 0.0f;
-	pipelineBuilder._viewport.y        = 0.0f;
-	pipelineBuilder._viewport.width    = (float)_windowExtent.width;
-	pipelineBuilder._viewport.height   = (float)_windowExtent.height;
-	pipelineBuilder._viewport.minDepth = 0.0f;
-	pipelineBuilder._viewport.maxDepth = 1.0f;
-
-	pipelineBuilder._scissor.offset = {0, 0};
-	pipelineBuilder._scissor.extent = _windowExtent;
-
-	// configure the rasterizer to draw filled triangles
-	pipelineBuilder._rasterizer =
+	pipelineBuilder.rasterizer =
 	    vk_init::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
-	// we don't use multisampling, so just run the default one
-	pipelineBuilder._multisampling =
+	pipelineBuilder.multisampling =
 	    vk_init::pipelineMultisampleStateCreateInfo();
 
-	// a single blend attachment with no blending and writing to RGBA
-	pipelineBuilder._colorBlendAttachment =
+	pipelineBuilder.colorBlendAttachment =
 	    vk_init::pipelineColorBlendAttachmentState();
 
-	// use the triangle layout we created
-	pipelineBuilder._pipelineLayout = _trianglePipelineLayout;
+	// build viewport and scissor from the swapchain extents
+	pipelineBuilder.viewport.x        = 0.0f;
+	pipelineBuilder.viewport.y        = 0.0f;
+	pipelineBuilder.viewport.width    = (float)_windowExtent.width;
+	pipelineBuilder.viewport.height   = (float)_windowExtent.height;
+	pipelineBuilder.viewport.minDepth = 0.0f;
+	pipelineBuilder.viewport.maxDepth = 1.0f;
+	pipelineBuilder.scissor.offset    = {0, 0};
+	pipelineBuilder.scissor.extent    = _windowExtent;
+
+	pipelineBuilder.pipelineLayout = _pipelineLayout;
 
 	// finally build the pipeline
-	_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
+	auto pipeline = pipelineBuilder.build(_device, _renderPass);
+	if (pipeline) {
+		_pipeline = pipeline.value();
+	} else {
+		throw std::runtime_error("Failed to create pipeline");
+	}
 
 	vkDestroyShaderModule(_device, triangleFragShader.value(), nullptr);
 	vkDestroyShaderModule(_device, triangleVertShader.value(), nullptr);
 
 	_deletionQueue.push_function([](const VkContext &ctx) {
-		// destroy the 2 pipelines we have created
-		vkDestroyPipeline(ctx._device, ctx._trianglePipeline, nullptr);
-
-		// destroy the pipeline layout that they use
-		vkDestroyPipelineLayout(ctx._device, ctx._trianglePipelineLayout,
-		                        nullptr);
+		vkDestroyPipeline(ctx._device, ctx._pipeline, nullptr);
+		vkDestroyPipelineLayout(ctx._device, ctx._pipelineLayout, nullptr);
 	});
 }

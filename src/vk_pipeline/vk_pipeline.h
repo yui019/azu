@@ -1,17 +1,22 @@
+#ifndef VK_PIPELINE_H
+#define VK_PIPELINE_H
+
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <optional>
 
-class PipelineBuilder {
-  public:
-	std::vector<VkPipelineShaderStageCreateInfo> _shaderStages;
-	VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
-	VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
-	VkViewport _viewport;
-	VkRect2D _scissor;
-	VkPipelineRasterizationStateCreateInfo _rasterizer;
-	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
-	VkPipelineMultisampleStateCreateInfo _multisampling;
-	VkPipelineLayout _pipelineLayout;
+struct PipelineBuilder {
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+	VkViewport viewport;
+	VkRect2D scissor;
+	VkPipelineRasterizationStateCreateInfo rasterizer;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo multisampling;
+	VkPipelineLayout pipelineLayout;
 
-	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+	std::optional<VkPipeline> build(VkDevice device, VkRenderPass pass);
 };
+
+#endif // VK_PIPELINE_H

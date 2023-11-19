@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UTIL_VK_INIT_H
+#define UTIL_VK_INIT_H
 
 #include "span.hpp"
 #include <cstddef>
@@ -56,3 +57,5 @@ pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges,
 
 VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
 } // namespace vk_init
+
+#endif // UTIL_VK_INIT_H

@@ -1,3 +1,6 @@
+#ifndef UTIL_H
+#define UTIL_H
+
 #include <cassert>
 
 // Use (void) to silence unused warnings.
@@ -10,3 +13,5 @@
 			throw err;                                                         \
 		}                                                                      \
 	} while (0)
+
+#endif // UTIL_H

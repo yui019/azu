@@ -1,3 +1,6 @@
+#ifndef AZU_H
+#define AZU_H
+
 #include "vk_context/vk_context.h"
 
 #include "glm/glm.hpp"
@@ -22,3 +25,5 @@ class Context {
 void run(Context &context);
 
 } // namespace azu
+
+#endif // AZU_H
