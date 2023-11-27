@@ -8,6 +8,7 @@ src = files(
 
 	'vk_pipeline/vk_pipeline.cpp',
 
-	'util/vk_init.cpp',
+	'vk_init/vk_init.cpp',
+
 	'util/buffer.cpp'
 )

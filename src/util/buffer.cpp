@@ -1,5 +1,5 @@
 #include "buffer.h"
-#include "vk_init.h"
+#include "../vk_init/vk_init.h"
 #include "util.h"
 
 Buffer::Buffer(const VmaAllocator &allocator, uint32_t size,

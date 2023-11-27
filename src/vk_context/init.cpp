@@ -4,7 +4,7 @@
 #include "quad_data.h"
 #include "../consts.h"
 #include "../util/util.h"
-#include "../util/vk_init.h"
+#include "../vk_init/vk_init.h"
 #include "../vk_pipeline/vk_pipeline.h"
 #include "VkBootstrap.h"
 #include <SDL_vulkan.h>
