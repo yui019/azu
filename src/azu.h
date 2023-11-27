@@ -11,18 +11,20 @@
 namespace azu {
 class Context {
 	SDL_Window *_window;
+	VkContext _vk;
+	glm::mat4 _projectionMatrix;
+	uint32_t _swapchainImageIndex;
 
   public:
-	VkContext vk;
 	uint32_t frameNumber = 0;
-	glm::mat4 projectionMatrix;
 
 	Context(std::string_view title, uint32_t width, uint32_t height);
 
+	void beginDraw();
+	void endDraw();
+
 	~Context();
 };
-
-void run(Context &context);
 
 } // namespace azu
 
