@@ -337,23 +337,23 @@ void VkContext::_initPipelines() {
 	// -------------
 
 	auto triangleFragShader =
-	    _loadShaderModuleFromFile("./shaders/triangle.frag.spv");
+	    _loadShaderModuleFromFile("./shaders/quad.frag.spv");
 
 	if (!triangleFragShader) {
-		printf("FAILED to build triangle fragment shader.\n");
+		printf("FAILED to build quad fragment shader.\n");
 		return;
 	} else {
-		printf("SUCCESSFULLY built triangle fragment shader.\n");
+		printf("SUCCESSFULLY built quad fragment shader.\n");
 	}
 
 	auto triangleVertShader =
-	    _loadShaderModuleFromFile("./shaders/triangle.vert.spv");
+	    _loadShaderModuleFromFile("./shaders/quad.vert.spv");
 
 	if (!triangleVertShader) {
-		printf("FAILED to build triangle vertex shader.\n");
+		printf("FAILED to build quad vertex shader.\n");
 		return;
 	} else {
-		printf("SUCCESSFULLY built triangle vertex shader.\n");
+		printf("SUCCESSFULLY built quad vertex shader.\n");
 	}
 
 	// CREATE PIPELINE LAYOUT
