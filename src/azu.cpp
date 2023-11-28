@@ -1,6 +1,6 @@
 #include "azu.h"
 
-#include "consts.h"
+#include "util/quad_data.h"
 #include "util/util.h"
 #include "SDL_error.h"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -30,6 +30,9 @@ Context::~Context() {
 }
 
 void Context::beginDraw() {
+	// reset this frame's quad data
+	_quadData.clear();
+
 	// wait until the GPU has finished rendering the last frame. Timeout of 1
 	// second
 	VK_CHECK(
@@ -88,11 +91,15 @@ void Context::beginDraw() {
 }
 
 void Context::endDraw() {
-	// naming it cmd for shorter writing
-	VkCommandBuffer cmd = _vk._mainCommandBuffer;
+	// fill quads buffer with the quads that were rendered by the user in
+	// drawQuads
+	_vk.fillQuadsBuffer(_quadData);
 
 	// RENDERING COMMANDS
 	// ------------------
+
+	// naming it cmd for shorter writing
+	VkCommandBuffer cmd = _vk._mainCommandBuffer;
 
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk._pipeline);
 
@@ -103,7 +110,7 @@ void Context::endDraw() {
 	vkCmdPushConstants(cmd, _vk._pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
 	                   4 * 4 * 4, &_projectionMatrix);
 
-	vkCmdDraw(cmd, 6 * QUAD_COUNT, 1, 0, 0);
+	vkCmdDraw(cmd, 6 * _quadData.size(), 1, 0, 0);
 
 	vkCmdEndRenderPass(cmd);
 	VK_CHECK(vkEndCommandBuffer(cmd));
@@ -159,4 +166,8 @@ void Context::endDraw() {
 	VK_CHECK(vkQueuePresentKHR(_vk._graphicsQueue, &presentInfo));
 
 	frameNumber++;
+}
+
+void Context::drawQuad(Quad quad, Color fill) {
+	_quadData.push_back({quad, fill});
 }

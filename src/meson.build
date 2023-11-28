@@ -5,6 +5,7 @@ src = files(
 	'vk_context/init.cpp',
 	'vk_context/destroy.cpp',
 	'vk_context/shader.cpp',
+	'vk_context/util.cpp',
 
 	'vk_pipeline/vk_pipeline.cpp',
 

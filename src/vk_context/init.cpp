@@ -1,8 +1,6 @@
 #define VMA_IMPLEMENTATION
 #include "vk_context.h"
 
-#include "quad_data.h"
-#include "../consts.h"
 #include "../util/util.h"
 #include "../vk_init/vk_init.h"
 #include "../vk_pipeline/vk_pipeline.h"
@@ -22,13 +20,6 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	_initSyncStructures();
 	_initDescriptors();
 	_initPipelines();
-
-	void *data;
-	vmaMapMemory(_allocator, _quadsBuffer.allocation, &data);
-
-	memcpy(data, QUADS, sizeof(QUADS));
-
-	vmaUnmapMemory(_allocator, _quadsBuffer.allocation);
 }
 
 void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {

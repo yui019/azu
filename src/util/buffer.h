@@ -9,6 +9,8 @@ class Buffer {
 	VkBuffer buffer;
 	VmaAllocation allocation;
 
+	void *data;
+
 	Buffer() = default;
 
 	Buffer(const VmaAllocator &allocator, uint32_t size,

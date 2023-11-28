@@ -1,9 +1,10 @@
 #ifndef VK_CONTEXT_H
 #define VK_CONTEXT_H
 
-#include "quad_data.h"
+#include "../util/quad_data.h"
 #include "../util/buffer.h"
 #include "vk_mem_alloc.h"
+#include "span.hpp"
 #include <SDL.h>
 #include <optional>
 #include <vulkan/vulkan.h>
@@ -74,6 +75,8 @@ class VkContext {
 	VkDescriptorSetLayout _globalDescriptorSetLayout;
 	VkDescriptorSet _globalDescriptorSet;
 
+	const uint32_t INITIAL_QUADS_BUFFER_SIZE =
+	    sizeof(QuadData) * 10000; // Unit: bytes
 	Buffer _quadsBuffer;
 
 	VkExtent2D _windowExtent;
@@ -127,6 +130,8 @@ class VkContext {
 	}
 
 	~VkContext();
+
+	void fillQuadsBuffer(tcb::span<QuadData> quadData);
 };
 
 #endif // VK_CONTEXT_H

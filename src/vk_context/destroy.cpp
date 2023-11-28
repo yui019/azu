@@ -8,6 +8,9 @@ VkContext::~VkContext() {
 	if (_instance) {
 		vkWaitForFences(_device, 1, &_renderFence, true, 1000000000);
 
+		// unmap quads buffer memory before destroying it
+		vmaUnmapMemory(_allocator, _quadsBuffer.allocation);
+
 		_deletionQueue.flush(*this);
 
 		vkDestroyDevice(_device, nullptr);
