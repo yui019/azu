@@ -1,3 +1,4 @@
+#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "vk_context.h"
 
@@ -19,6 +20,7 @@ VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
 	_initCommands();
 	_initSyncStructures();
 	_initDescriptors();
+	_initSampler();
 	_initPipelines();
 }
 
@@ -203,6 +205,25 @@ void VkContext::_initCommands() {
 	_deletionQueue.push_function([](const VkContext &ctx) {
 		vkDestroyCommandPool(ctx._device, ctx._commandPool, nullptr);
 	});
+
+	// also a command pool and command buffer for the immediateSubmit function
+
+	VkCommandPoolCreateInfo immediateSubmitPool =
+	    vk_init::commandPoolCreateInfo(_graphicsQueueFamily);
+	VK_CHECK(vkCreateCommandPool(_device, &immediateSubmitPool, nullptr,
+	                             &_immediateSubmitContext.commandPool));
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyCommandPool(ctx._device,
+		                     ctx._immediateSubmitContext.commandPool, nullptr);
+	});
+
+	VkCommandBufferAllocateInfo immediateSubmitBuffer =
+	    vk_init::commandBufferAllocateInfo(_immediateSubmitContext.commandPool,
+	                                       1);
+
+	VK_CHECK(vkAllocateCommandBuffers(_device, &immediateSubmitBuffer,
+	                                  &_immediateSubmitContext.commandBuffer));
 }
 
 void VkContext::_initSyncStructures() {
@@ -230,6 +251,16 @@ void VkContext::_initSyncStructures() {
 		vkDestroySemaphore(ctx._device, ctx._presentSemaphore, nullptr);
 		vkDestroySemaphore(ctx._device, ctx._renderSemaphore, nullptr);
 	});
+
+	// also a fence for the immedateSubmit function
+
+	VkFenceCreateInfo immediateSubmitFence = vk_init::fenceCreateInfo();
+
+	VK_CHECK(vkCreateFence(_device, &immediateSubmitFence, nullptr,
+	                       &_immediateSubmitContext.fence));
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroyFence(ctx._device, ctx._immediateSubmitContext.fence, nullptr);
+	});
 }
 
 void VkContext::_initDescriptors() {
@@ -237,7 +268,8 @@ void VkContext::_initDescriptors() {
 	// ----------------------
 
 	std::vector<VkDescriptorPoolSize> sizes = {
-	    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}
+	    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         10},
+	    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}
     };
 
 	VkDescriptorPoolCreateInfo pool_info = {};
@@ -264,11 +296,20 @@ void VkContext::_initDescriptors() {
 	quadsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	quadsBufferBinding.stageFlags     = VK_SHADER_STAGE_VERTEX_BIT;
 
+	VkDescriptorSetLayoutBinding texturesBinding = {};
+	texturesBinding.binding                      = 1;
+	texturesBinding.descriptorCount              = 1;
+	texturesBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	texturesBinding.stageFlags     = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding bindings[] = {quadsBufferBinding,
+	                                           texturesBinding};
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.pNext = nullptr;
-	layoutInfo.bindingCount = 1;
-	layoutInfo.pBindings    = &quadsBufferBinding;
+	layoutInfo.bindingCount = 2;
+	layoutInfo.pBindings    = bindings;
 	layoutInfo.flags        = 0;
 
 	vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
@@ -311,16 +352,27 @@ void VkContext::_initDescriptors() {
 	descriptorBufferInfo.offset = 0;
 	descriptorBufferInfo.range  = INITIAL_QUADS_BUFFER_SIZE;
 
-	VkWriteDescriptorSet setWrite = {};
-	setWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.pNext                = nullptr;
-	setWrite.dstBinding           = 0;
-	setWrite.dstSet               = _globalDescriptorSet;
-	setWrite.descriptorCount      = 1;
-	setWrite.descriptorType       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	setWrite.pBufferInfo          = &descriptorBufferInfo;
+	VkWriteDescriptorSet setWriteBuffer = {};
+	setWriteBuffer.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	setWriteBuffer.pNext           = nullptr;
+	setWriteBuffer.dstBinding      = 0;
+	setWriteBuffer.dstSet          = _globalDescriptorSet;
+	setWriteBuffer.descriptorCount = 1;
+	setWriteBuffer.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	setWriteBuffer.pBufferInfo     = &descriptorBufferInfo;
 
-	vkUpdateDescriptorSets(_device, 1, &setWrite, 0, nullptr);
+	vkUpdateDescriptorSets(_device, 1, &setWriteBuffer, 0, nullptr);
+}
+
+void VkContext::_initSampler() {
+	VkSamplerCreateInfo samplerInfo = vk_init::samplerCreateInfo(
+	    VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+
+	vkCreateSampler(_device, &samplerInfo, nullptr, &_globalSampler);
+
+	_deletionQueue.push_function([](const VkContext &ctx) {
+		vkDestroySampler(ctx._device, ctx._globalSampler, nullptr);
+	});
 }
 
 void VkContext::_initPipelines() {

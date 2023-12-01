@@ -35,6 +35,8 @@ class Context {
 
 	void drawQuad(Quad quad, Color fill);
 
+	bool loadTextureFromFile(const char *path);
+
 	~Context();
 };
 

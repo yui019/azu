@@ -56,6 +56,12 @@ pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges,
                          tcb::span<VkDescriptorSetLayout> descriptorSetLayouts);
 
 VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
+
+VkImageCreateInfo imageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags,
+                                  VkExtent3D extent);
+
+VkSamplerCreateInfo samplerCreateInfo(VkFilter filters,
+                                      VkSamplerAddressMode samplerAddressMode);
 } // namespace vk_init
 
 #endif // UTIL_VK_INIT_H

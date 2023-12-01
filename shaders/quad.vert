@@ -6,6 +6,7 @@ layout(push_constant) uniform constants {
 pushConstants;
 
 layout(location = 0) out vec3 outColor;
+layout(location = 1) out vec2 outUv;
 
 struct Quad {
 	vec2 pos;
@@ -39,8 +40,18 @@ void main() {
 	                                 vec3(x + w, y, 0.0)      // top right
 	);
 
+	const vec2 uv[6] = vec2[6](vec2(0.0, 0.0), // top left
+	                           vec2(1.0, 0.0), // top right
+	                           vec2(0.0, 1.0), // bottom left
+
+	                           vec2(0.0, 1.0), // bottom left
+	                           vec2(1.0, 1.0), // bottom right
+	                           vec2(1.0, 0.0)  // top right
+	);
+
 	// output the position of each vertex
 	gl_Position = pushConstants.projectionMatrix *
 	              vec4(vertices[gl_VertexIndex % 6], 1.0f);
+	outUv    = uv[gl_VertexIndex % 6];
 	outColor = d.color.rgb;
 }

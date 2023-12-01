@@ -20,28 +20,19 @@ class VkContext {
 	void _initCommands();
 	void _initSyncStructures();
 	void _initDescriptors();
+	void _initSampler();
 	void _initPipelines();
 
 	std::optional<VkShaderModule>
 	_loadShaderModuleFromFile(const char *path) const;
 
-	struct DeletionQueue {
-		std::deque<std::function<void(const VkContext &context)>> deletors;
-
-		void push_function(std::function<void(const VkContext &)> &&function) {
-			deletors.push_back(function);
-		}
-
-		void flush(const VkContext &context) {
-			for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
-				(*it)(context);
-			}
-
-			deletors.clear();
-		}
+	struct ImmediateSubmitContext {
+		VkFence fence;
+		VkCommandPool commandPool;
+		VkCommandBuffer commandBuffer;
 	};
 
-	DeletionQueue _deletionQueue;
+	ImmediateSubmitContext _immediateSubmitContext;
 
   public:
 	VkInstance _instance                      = nullptr;
@@ -78,6 +69,8 @@ class VkContext {
 	const uint32_t INITIAL_QUADS_BUFFER_SIZE =
 	    sizeof(QuadData) * 10000; // Unit: bytes
 	Buffer _quadsBuffer;
+
+	VkSampler _globalSampler;
 
 	VkExtent2D _windowExtent;
 
@@ -125,11 +118,33 @@ class VkContext {
 		std::swap(_globalDescriptorSetLayout, other._globalDescriptorSetLayout);
 		std::swap(_globalDescriptorSet, other._globalDescriptorSet);
 		std::swap(_quadsBuffer, other._quadsBuffer);
+		std::swap(_immediateSubmitContext, other._immediateSubmitContext);
+		std::swap(_globalSampler, other._globalSampler);
 
 		return *this;
 	}
 
 	~VkContext();
+
+	struct DeletionQueue {
+		std::deque<std::function<void(const VkContext &context)>> deletors;
+
+		void push_function(std::function<void(const VkContext &)> &&function) {
+			deletors.push_back(function);
+		}
+
+		void flush(const VkContext &context) {
+			for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+				(*it)(context);
+			}
+
+			deletors.clear();
+		}
+	};
+
+	DeletionQueue _deletionQueue;
+
+	void immediateSubmit(std::function<void(VkCommandBuffer cmd)> &&function);
 
 	void fillQuadsBuffer(tcb::span<QuadData> quadData);
 };

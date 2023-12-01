@@ -4,6 +4,8 @@
 int main() {
 	auto context = azu::Context("Title", 800, 600);
 
+	context.loadTextureFromFile("res/akkarin.jpg");
+
 	SDL_Event e;
 	bool quit = false;
 
@@ -19,13 +21,8 @@ int main() {
 
 		SDL_GetMouseState(&mousex, &mousey);
 
-		if (mousex > 400) {
-			context.drawQuad(Quad::create(mousex, mousey, 50, 50),
-			                 Color::rgb(1.0, 0.0, 1.0));
-		} else {
-			context.drawQuad(Quad::create(mousex, mousey, 50, 50),
-			                 Color::rgb(0.0, 1.0, 0.0));
-		}
+		context.drawQuad(Quad::create(mousex, mousey, 257, 262),
+		                 Color::rgb(1.0, 0.0, 1.0));
 
 		context.endDraw();
 	}
