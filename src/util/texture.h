@@ -12,6 +12,7 @@ class Texture {
 	VkImageView imageView;
 	uint32_t width;
 	uint32_t height;
+	uint32_t vk_id;
 };
 
 #endif // UTIL_TEXTURE_H

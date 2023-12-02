@@ -1,6 +1,7 @@
 #ifndef AZU_H
 #define AZU_H
 
+#include "util/texture.h"
 #include "util/geometry.h"
 #include "util/color.h"
 #include "util/quad_data.h"
@@ -11,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace azu {
@@ -25,6 +27,10 @@ class Context {
 	std::vector<QuadData> _quadData; // cleared at beginDraw and gets new
 	                                 // elements on every user call of drawQuad
 
+	std::unordered_map<std::string, Texture>
+	    _textures; // cleared at beginDraw and gets new
+	               // elements on every user call of drawQuad
+
   public:
 	uint32_t frameNumber = 0;
 
@@ -33,9 +39,12 @@ class Context {
 	void beginDraw();
 	void endDraw();
 
-	void drawQuad(Quad quad, Color fill);
+	void drawQuad(Quad quad, Color color);
+	void drawQuad(Quad quad, const char *textureName);
 
-	bool loadTextureFromFile(const char *path);
+	bool createTextureFromFile(const char *name, const char *path);
+
+	Vec2 getTextureDimensions(const char *name);
 
 	~Context();
 };

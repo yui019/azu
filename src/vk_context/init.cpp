@@ -85,7 +85,7 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 	allocatorInfo.physicalDevice         = _chosenGPU;
 	allocatorInfo.device                 = _device;
 	allocatorInfo.instance               = _instance;
-	vmaCreateAllocator(&allocatorInfo, &_allocator);
+	VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_allocator));
 
 	_deletionQueue.push_function(
 	    [](const VkContext &ctx) { vmaDestroyAllocator(ctx._allocator); });
@@ -269,7 +269,8 @@ void VkContext::_initDescriptors() {
 
 	std::vector<VkDescriptorPoolSize> sizes = {
 	    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         10},
-	    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}
+	    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+	     INITIAL_ARRAY_OF_TEXTURES_LENGTH             }
     };
 
 	VkDescriptorPoolCreateInfo pool_info = {};
@@ -279,8 +280,8 @@ void VkContext::_initDescriptors() {
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes    = sizes.data();
 
-	vkCreateDescriptorPool(_device, &pool_info, nullptr,
-	                       &_globalDescriptorPool);
+	VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr,
+	                                &_globalDescriptorPool));
 
 	_deletionQueue.push_function([](const VkContext &ctx) {
 		vkDestroyDescriptorPool(ctx._device, ctx._globalDescriptorPool,
@@ -298,9 +299,9 @@ void VkContext::_initDescriptors() {
 
 	VkDescriptorSetLayoutBinding texturesBinding = {};
 	texturesBinding.binding                      = 1;
-	texturesBinding.descriptorCount              = 1;
-	texturesBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	texturesBinding.stageFlags     = VK_SHADER_STAGE_FRAGMENT_BIT;
+	texturesBinding.descriptorCount = INITIAL_ARRAY_OF_TEXTURES_LENGTH;
+	texturesBinding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	texturesBinding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding bindings[] = {quadsBufferBinding,
 	                                           texturesBinding};
@@ -312,8 +313,8 @@ void VkContext::_initDescriptors() {
 	layoutInfo.pBindings    = bindings;
 	layoutInfo.flags        = 0;
 
-	vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
-	                            &_globalDescriptorSetLayout);
+	VK_CHECK(vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
+	                                     &_globalDescriptorSetLayout));
 
 	_deletionQueue.push_function([](const VkContext &ctx) {
 		vkDestroyDescriptorSetLayout(ctx._device,
@@ -342,7 +343,8 @@ void VkContext::_initDescriptors() {
 	allocateInfo.descriptorSetCount = 1;
 	allocateInfo.pSetLayouts        = &_globalDescriptorSetLayout;
 
-	vkAllocateDescriptorSets(_device, &allocateInfo, &_globalDescriptorSet);
+	VK_CHECK(vkAllocateDescriptorSets(_device, &allocateInfo,
+	                                  &_globalDescriptorSet));
 
 	// UPDATE DESCRIPTOR SET TO POINT TO QUADS BUFFER
 	// ----------------------------------------------
@@ -368,7 +370,7 @@ void VkContext::_initSampler() {
 	VkSamplerCreateInfo samplerInfo = vk_init::samplerCreateInfo(
 	    VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
-	vkCreateSampler(_device, &samplerInfo, nullptr, &_globalSampler);
+	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_globalSampler));
 
 	_deletionQueue.push_function([](const VkContext &ctx) {
 		vkDestroySampler(ctx._device, ctx._globalSampler, nullptr);

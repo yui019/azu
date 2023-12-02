@@ -2,6 +2,8 @@
 #define UTIL_H
 
 #include <cassert>
+#include <stdexcept>
+#include <string>
 
 // Use (void) to silence unused warnings.
 #define ASSERT(exp, msg) assert(((void)msg, exp))
@@ -10,7 +12,8 @@
 	do {                                                                       \
 		VkResult err = x;                                                      \
 		if (err) {                                                             \
-			throw err;                                                         \
+			throw std::runtime_error(std::string("Vulkan error, code: ") +     \
+			                         std::to_string(err));                     \
 		}                                                                      \
 	} while (0)
 

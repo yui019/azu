@@ -70,6 +70,8 @@ class VkContext {
 	    sizeof(QuadData) * 10000; // Unit: bytes
 	Buffer _quadsBuffer;
 
+	const uint32_t INITIAL_ARRAY_OF_TEXTURES_LENGTH = 1000; // Unit: elements
+
 	VkSampler _globalSampler;
 
 	VkExtent2D _windowExtent;

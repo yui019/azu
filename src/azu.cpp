@@ -1,11 +1,15 @@
 #include "azu.h"
 
+#include "src/util/color.h"
 #include "src/vk_context/vk_context.h"
 #include "util/texture.h"
 #include "util/buffer.h"
 #include "util/quad_data.h"
 #include "util/util.h"
 #include "vk_init/vk_init.h"
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 #include <vulkan/vulkan_core.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -175,11 +179,25 @@ void Context::endDraw() {
 	frameNumber++;
 }
 
-void Context::drawQuad(Quad quad, Color fill) {
-	_quadData.push_back({quad, fill});
+void Context::drawQuad(Quad quad, Color color) {
+	_quadData.push_back({quad, color, 0, QuadDataFillType::Color});
 }
 
-bool Context::loadTextureFromFile(const char *path) {
+void Context::drawQuad(Quad quad, const char *textureName) {
+	_quadData.push_back({quad, Color::black(), _textures[textureName].vk_id,
+	                     QuadDataFillType::Texture});
+}
+
+Vec2 Context::getTextureDimensions(const char *name) {
+	return {(float)_textures[name].width, (float)_textures[name].height};
+}
+
+bool Context::createTextureFromFile(const char *name, const char *path) {
+	// early return if a texture with the given name already exists
+	if (_textures.count(name)) {
+		return false;
+	}
+
 	int width, height, channels;
 
 	stbi_uc *pixels =
@@ -218,6 +236,7 @@ bool Context::loadTextureFromFile(const char *path) {
 	    imageExtent);
 
 	Texture texture;
+	texture.vk_id  = _textures.size();
 	texture.width  = width;
 	texture.height = height;
 
@@ -225,8 +244,9 @@ bool Context::loadTextureFromFile(const char *path) {
 	imageAllocateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	// allocate and create the image
-	vmaCreateImage(_vk._allocator, &imageCreateInfo, &imageAllocateInfo,
-	               &texture.image, &texture.allocation, nullptr);
+	VK_CHECK(vmaCreateImage(_vk._allocator, &imageCreateInfo,
+	                        &imageAllocateInfo, &texture.image,
+	                        &texture.allocation, nullptr));
 
 	_vk.immediateSubmit([&](VkCommandBuffer cmd) {
 		// TRANSFER IMAGE TO VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -312,25 +332,41 @@ bool Context::loadTextureFromFile(const char *path) {
 	VK_CHECK(vkCreateImageView(_vk._device, &imageViewInfo, nullptr,
 	                           &texture.imageView));
 
-	VkDescriptorImageInfo descriptorImageInfo;
-	descriptorImageInfo.sampler     = _vk._globalSampler;
-	descriptorImageInfo.imageView   = texture.imageView;
-	descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
+	descriptorImageInfos.reserve(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
+
+	// Fill in all the descriptors with this same texture
+	for (uint32_t i = 0; i < _vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH; i++) {
+		descriptorImageInfos[i].sampler   = _vk._globalSampler;
+		descriptorImageInfos[i].imageView = texture.imageView;
+		descriptorImageInfos[i].imageLayout =
+		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
+
+	// Change all the previously created descriptors into their own image views
+	for (auto [name, t] : _textures) {
+		descriptorImageInfos[t.vk_id].sampler   = _vk._globalSampler;
+		descriptorImageInfos[t.vk_id].imageView = t.imageView;
+		descriptorImageInfos[t.vk_id].imageLayout =
+		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
 
 	VkWriteDescriptorSet setWriteImage = {};
 	setWriteImage.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	setWriteImage.pNext                = nullptr;
 	setWriteImage.dstBinding           = 1;
 	setWriteImage.dstSet               = _vk._globalDescriptorSet;
-	setWriteImage.descriptorCount      = 1;
+	setWriteImage.descriptorCount      = _vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH;
 	setWriteImage.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWriteImage.pImageInfo     = &descriptorImageInfo;
+	setWriteImage.pImageInfo     = descriptorImageInfos.data();
 
 	vkUpdateDescriptorSets(_vk._device, 1, &setWriteImage, 0, nullptr);
 
 	_vk._deletionQueue.push_function([texture](const VkContext &ctx) {
 		vkDestroyImageView(ctx._device, texture.imageView, nullptr);
 	});
+
+	_textures[name] = texture;
 
 	return true;
 }
