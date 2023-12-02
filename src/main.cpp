@@ -7,6 +7,8 @@ int main() {
 	context.createTextureFromFile("akkarin", "res/akkarin.jpg");
 	context.createTextureFromFile("alien", "res/smug_alien.png");
 
+	// TODO: this Vec2 (and VkContext and everything else) should be in the azu
+	// namespace
 	Vec2 akkarinSize = context.getTextureDimensions("akkarin");
 	Vec2 alienSize   = context.getTextureDimensions("alien");
 
