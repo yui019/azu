@@ -45,9 +45,13 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	SDL_Vulkan_CreateSurface(window, _instance, &_surface);
 
+	VkPhysicalDeviceVulkan12Features features          = {};
+	features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	vkb::PhysicalDeviceSelector selector{vkbInstance};
-	auto physicalDeviceResult =
-	    selector.set_minimum_version(1, 3).set_surface(_surface).select();
+	auto physicalDeviceResult = selector.set_minimum_version(1, 3)
+	                                .set_surface(_surface)
+	                                .set_required_features_12(features)
+	                                .select();
 	if (!physicalDeviceResult) {
 		throw physicalDeviceResult.error();
 	}

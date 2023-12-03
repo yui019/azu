@@ -1,5 +1,7 @@
 #version 450
 
+#extension GL_EXT_nonuniform_qualifier : enable
+
 layout(location = 0) flat in int inFillType;
 layout(location = 1) in vec4 inColor;
 layout(location = 2) flat in int inTextureId;
@@ -16,7 +18,7 @@ void main() {
 	if (inFillType == FILL_TYPE_COLOR) {
 		outColor = inColor;
 	} else if (inFillType == FILL_TYPE_TEXTURE) {
-		outColor = texture(textureSamplers[inTextureId], inUv);
+		outColor = texture(textureSamplers[nonuniformEXT(inTextureId)], inUv);
 	} else {
 		outColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}

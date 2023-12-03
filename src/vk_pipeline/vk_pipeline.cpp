@@ -12,15 +12,18 @@ std::optional<VkPipeline> PipelineBuilder::build(VkDevice device,
 	viewportState.scissorCount  = 1;
 	viewportState.pScissors     = &scissor;
 
-	// no blending for now
 	VkPipelineColorBlendStateCreateInfo colorBlending = {};
 	colorBlending.sType =
 	    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlending.pNext           = nullptr;
-	colorBlending.logicOpEnable   = VK_FALSE;
-	colorBlending.logicOp         = VK_LOGIC_OP_COPY;
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments    = &colorBlendAttachment;
+	colorBlending.pNext             = nullptr;
+	colorBlending.logicOpEnable     = VK_FALSE;
+	colorBlending.logicOp           = VK_LOGIC_OP_COPY;
+	colorBlending.attachmentCount   = 1;
+	colorBlending.pAttachments      = &colorBlendAttachment;
+	colorBlending.blendConstants[0] = 1.0f;
+	colorBlending.blendConstants[1] = 1.0f;
+	colorBlending.blendConstants[2] = 1.0f;
+	colorBlending.blendConstants[3] = 1.0f;
 
 	// build the pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
