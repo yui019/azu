@@ -4,6 +4,8 @@
 #include "vk_mem_alloc.h"
 #include <vulkan/vulkan.h>
 
+namespace azu {
+
 class Buffer {
   public:
 	VkBuffer buffer;
@@ -16,5 +18,7 @@ class Buffer {
 	Buffer(const VmaAllocator &allocator, uint32_t size,
 	       VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage);
 };
+
+} // namespace azu
 
 #endif // UTIL_BUFFER_H

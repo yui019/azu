@@ -5,6 +5,8 @@
 #include "src/util/color.h"
 #include <cstdint>
 
+namespace azu {
+
 enum class QuadDataFillType {
 	Color   = 1,
 	Texture = 2
@@ -18,5 +20,7 @@ struct QuadData {
 
 	char _padding[8];
 };
+
+} // namespace azu
 
 #endif // UTIL_QUAD_DATA_H

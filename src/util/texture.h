@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <cstdint>
 
+namespace azu {
+
 class Texture {
   public:
 	VkImage image;
@@ -14,5 +16,7 @@ class Texture {
 	uint32_t height;
 	uint32_t vk_id;
 };
+
+} // namespace azu
 
 #endif // UTIL_TEXTURE_H

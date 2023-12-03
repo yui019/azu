@@ -4,6 +4,8 @@
 #include <optional>
 #include <stdexcept>
 
+using namespace azu;
+
 std::optional<VkShaderModule>
 VkContext::_loadShaderModuleFromFile(const char *path) const {
 	std::ifstream file(path, std::ios::ate | std::ios::binary);

@@ -1,6 +1,8 @@
 #ifndef UTIL_GEOMETRY_H
 #define UTIL_GEOMETRY_H
 
+namespace azu {
+
 struct Vec2 {
 	float x;
 	float y;
@@ -34,5 +36,7 @@ struct Quad {
         };
 	}
 };
+
+} // namespace azu
 
 #endif // UTIL_GEOMETRY_H

@@ -1,5 +1,7 @@
 #include "vk_pipeline.h"
 
+using namespace azu;
+
 std::optional<VkPipeline> PipelineBuilder::build(VkDevice device,
                                                  VkRenderPass pass) {
 	VkPipelineViewportStateCreateInfo viewportState = {};

@@ -2,6 +2,8 @@
 
 #include "VkBootstrap.h"
 
+using namespace azu;
+
 VkContext::~VkContext() {
 	// if the VkInstance is set to nullptr, it's probably a VkContext left in an
 	// invalid state after being moved, so the destructor shouldn't run

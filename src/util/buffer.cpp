@@ -2,6 +2,8 @@
 #include "../vk_init/vk_init.h"
 #include "util.h"
 
+using namespace azu;
+
 Buffer::Buffer(const VmaAllocator &allocator, uint32_t size,
                VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage) {
 	VkBufferCreateInfo bufferInfo =

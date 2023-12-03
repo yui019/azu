@@ -1,6 +1,8 @@
 #ifndef UTIL_COLOR_H
 #define UTIL_COLOR_H
 
+namespace azu {
+
 struct Color {
 	float r;
 	float g;
@@ -23,5 +25,7 @@ struct Color {
 		return {r, g, b, a};
 	}
 };
+
+} // namespace azu
 
 #endif // UTIL_COLOR_H

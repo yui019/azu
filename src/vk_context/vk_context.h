@@ -12,6 +12,8 @@
 #include <deque>
 #include <functional>
 
+namespace azu {
+
 class VkContext {
 	void _initVulkan(SDL_Window *window, bool useValidationLayers);
 	void _initSwapchain();
@@ -150,5 +152,7 @@ class VkContext {
 
 	void fillQuadsBuffer(tcb::span<QuadData> quadData);
 };
+
+} // namespace azu
 
 #endif // VK_CONTEXT_H
