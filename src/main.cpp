@@ -13,8 +13,6 @@ int minY      = 0;
 struct Bunny {
 	azu::Vec2 position;
 	azu::Vec2 velocity;
-
-	static Bunny create() {}
 };
 
 // https://github.com/HaxeFoundation/hxcpp/blob/master/src/hx/StdLibs.cpp#L190
