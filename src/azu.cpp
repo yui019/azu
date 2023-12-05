@@ -9,6 +9,7 @@
 #include "vk_init/vk_init.h"
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -184,11 +185,19 @@ void Context::drawQuad(Quad quad, Color color) {
 }
 
 void Context::drawQuad(Quad quad, const char *textureName) {
+	if (_textures.count(textureName) == 0) {
+		throw std::runtime_error("There is no texture with that name");
+	}
+
 	_quadData.push_back({quad, Color::black(), _textures[textureName].vk_id,
 	                     QuadDataFillType::Texture});
 }
 
 Vec2 Context::getTextureDimensions(const char *name) {
+	if (_textures.count(name) == 0) {
+		throw std::runtime_error("There is no texture with that name");
+	}
+
 	return {(float)_textures[name].width, (float)_textures[name].height};
 }
 
