@@ -45,13 +45,9 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	SDL_Vulkan_CreateSurface(window, _instance, &_surface);
 
-	VkPhysicalDeviceVulkan12Features features          = {};
-	features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	vkb::PhysicalDeviceSelector selector{vkbInstance};
-	auto physicalDeviceResult = selector.set_minimum_version(1, 3)
-	                                .set_surface(_surface)
-	                                .set_required_features_12(features)
-	                                .select();
+	auto physicalDeviceResult =
+	    selector.set_minimum_version(1, 3).set_surface(_surface).select();
 	if (!physicalDeviceResult) {
 		throw physicalDeviceResult.error();
 	}
@@ -60,7 +56,17 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	vkb::DeviceBuilder deviceBuilder{physicalDevice};
 
-	auto vkbDeviceResult = deviceBuilder.build();
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+	indexingFeatures.sType =
+	    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	indexingFeatures.shaderSampledImageArrayNonUniformIndexing =
+	    VK_TRUE; // can index into descriptor arrays with a uniform in shader
+	indexingFeatures.runtimeDescriptorArray =
+	    VK_TRUE; // can have descriptor arrays with dynamic size in shader
+	indexingFeatures.descriptorBindingPartiallyBound =
+	    VK_TRUE; // don't need to update unused descriptors
+
+	auto vkbDeviceResult = deviceBuilder.add_pNext(&indexingFeatures).build();
 	if (!vkbDeviceResult) {
 		throw vkbDeviceResult.error();
 	}
@@ -312,12 +318,24 @@ void VkContext::_initDescriptors() {
 	VkDescriptorSetLayoutBinding bindings[] = {quadsBufferBinding,
 	                                           texturesBinding};
 
+	VkDescriptorBindingFlags flags[2];
+	flags[0] = 0;
+	flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+
+	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
+	extendedInfo.sType =
+	    VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+	extendedInfo.pNext         = nullptr;
+	extendedInfo.bindingCount  = 2;
+	extendedInfo.pBindingFlags = flags;
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.pNext = nullptr;
 	layoutInfo.bindingCount = 2;
 	layoutInfo.pBindings    = bindings;
 	layoutInfo.flags        = 0;
+	layoutInfo.pNext        = &extendedInfo;
 
 	VK_CHECK(vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
 	                                     &_globalDescriptorSetLayout));

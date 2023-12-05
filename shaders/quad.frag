@@ -9,7 +9,7 @@ layout(location = 3) in vec2 inUv;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 1) uniform sampler2D textureSamplers[1000];
+layout(set = 0, binding = 1) uniform sampler2D textureSamplers[];
 
 #define FILL_TYPE_COLOR   1
 #define FILL_TYPE_TEXTURE 2

@@ -9,6 +9,8 @@ int main() {
 	const int screenHeight = 600;
 	auto context           = Context("Test", screenWidth, screenHeight);
 
+	context.createTextureFromFile("akkarin", "res/akkarin.jpg");
+
 	SDL_Event e;
 	bool quit = false;
 	while (!quit) {
@@ -19,7 +21,7 @@ int main() {
 
 		context.beginDraw();
 
-		context.drawQuad(Quad::create(0, 0, 100, 100), Color::white());
+		context.drawQuad(Quad::create(0, 0, 100, 100), "akkarin");
 
 		context.endDraw();
 	}

@@ -345,7 +345,9 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	descriptorImageInfos.reserve(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
 
 	// Fill in all the descriptors with this same texture
-	for (uint32_t i = 0; i < _vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH; i++) {
+	// Only doing the minimum number of descriptors (_textures.size()+1),
+	// everything else can stay uninitialized
+	for (uint32_t i = 0; i < _textures.size() + 1; i++) {
 		descriptorImageInfos[i].sampler   = _vk._globalSampler;
 		descriptorImageInfos[i].imageView = texture.imageView;
 		descriptorImageInfos[i].imageLayout =
@@ -365,9 +367,9 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	setWriteImage.pNext                = nullptr;
 	setWriteImage.dstBinding           = 1;
 	setWriteImage.dstSet               = _vk._globalDescriptorSet;
-	setWriteImage.descriptorCount      = _vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH;
-	setWriteImage.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWriteImage.pImageInfo     = descriptorImageInfos.data();
+	setWriteImage.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	setWriteImage.descriptorCount = _textures.size() + 1;
+	setWriteImage.pImageInfo      = descriptorImageInfos.data();
 
 	vkUpdateDescriptorSets(_vk._device, 1, &setWriteImage, 0, nullptr);
 
