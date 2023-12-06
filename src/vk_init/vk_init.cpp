@@ -223,8 +223,8 @@ vk_init::pipelineColorBlendAttachmentState() {
 }
 
 VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo(
-    tcb::span<VkPushConstantRange> pushConstantRanges,
-    tcb::span<VkDescriptorSetLayout> descriptorSetLayouts) {
+    std::span<VkPushConstantRange> pushConstantRanges,
+    std::span<VkDescriptorSetLayout> descriptorSetLayouts) {
 	VkPipelineLayoutCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	info.pNext = nullptr;

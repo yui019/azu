@@ -1,7 +1,7 @@
 #ifndef UTIL_VK_INIT_H
 #define UTIL_VK_INIT_H
 
-#include "span.hpp"
+#include <span>
 #include <cstddef>
 #include <cstdint>
 #include <vulkan/vulkan.h>
@@ -52,8 +52,8 @@ VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo();
 VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
 
 VkPipelineLayoutCreateInfo
-pipelineLayoutCreateInfo(tcb::span<VkPushConstantRange> pushConstantRanges,
-                         tcb::span<VkDescriptorSetLayout> descriptorSetLayouts);
+pipelineLayoutCreateInfo(std::span<VkPushConstantRange> pushConstantRanges,
+                         std::span<VkDescriptorSetLayout> descriptorSetLayouts);
 
 VkBufferCreateInfo bufferCreateInfo(uint32_t size, VkBufferUsageFlags usage);
 

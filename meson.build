@@ -1,5 +1,5 @@
 project('Azu - 2D graphics library', 'cpp',
-  default_options : ['warning_level=3', 'cpp_std=c++17'])
+  default_options : ['warning_level=3', 'cpp_std=c++20'])
 
 subdir('src')
 

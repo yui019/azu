@@ -4,10 +4,10 @@
 #include "../util/quad_data.h"
 #include "../util/buffer.h"
 #include "vk_mem_alloc.h"
-#include "span.hpp"
 #include <SDL.h>
-#include <optional>
 #include <vulkan/vulkan.h>
+#include <optional>
+#include <span>
 #include <vector>
 #include <deque>
 #include <functional>
@@ -150,7 +150,7 @@ class VkContext {
 
 	void immediateSubmit(std::function<void(VkCommandBuffer cmd)> &&function);
 
-	void fillQuadsBuffer(tcb::span<QuadData> quadData);
+	void fillQuadsBuffer(std::span<QuadData> quadData);
 };
 
 } // namespace azu
