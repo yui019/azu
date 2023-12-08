@@ -5,11 +5,6 @@ layout(push_constant) uniform constants {
 }
 pushConstants;
 
-layout(location = 0) out int outFillType;
-layout(location = 1) out vec4 outColor;
-layout(location = 2) out int outTextureId;
-layout(location = 3) out vec2 outUv;
-
 struct Quad {
 	vec2 pos;
 	vec2 size;
@@ -21,6 +16,9 @@ struct QuadData {
 	int textureId;
 	int fillType;
 };
+
+layout(location = 0) out vec2 outUv;
+layout(location = 1) out QuadData outQuadData;
 
 layout(std140, set = 0, binding = 0) readonly buffer QuadsBuffer {
 	QuadData quads[];
@@ -56,8 +54,6 @@ void main() {
 	// output the position of each vertex
 	gl_Position = pushConstants.projectionMatrix *
 	              vec4(vertices[gl_VertexIndex % 6], 1.0f);
-	outUv        = uv[gl_VertexIndex % 6];
-	outFillType  = d.fillType;
-	outColor     = d.color;
-	outTextureId = d.textureId;
+	outUv       = uv[gl_VertexIndex % 6];
+	outQuadData = d;
 }
