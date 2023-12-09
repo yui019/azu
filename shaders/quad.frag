@@ -24,6 +24,20 @@ layout(set = 0, binding = 1) uniform sampler2D textureSamplers[];
 #define FILL_TYPE_COLOR   1
 #define FILL_TYPE_TEXTURE 2
 
+struct QuadPoints {
+	vec2 tl; // top left
+	vec2 tr; // top right
+	vec2 bl; // bottom left
+	vec2 br; // bottom right
+};
+
+struct QuadValues {
+	float tl; // top left
+	float tr; // top right
+	float bl; // bottom left
+	float br; // bottom right
+};
+
 vec4 composite(vec4 back, vec4 front) {
 	return mix(back, front, front.a);
 }
@@ -36,26 +50,76 @@ vec4 apply_factor(vec4 color, float f) {
 	return vec4(color.rgb, color.a * f);
 }
 
-float sdf_quad(vec2 p, vec4 r) {
-	vec2 b = vec2(0.5);
-	p      = p - vec2(0.5, 0.5);
+bool between_noninclusive(float v, float from, float to) {
+	return (v > from) && (v < to);
+}
 
-	r.xy   = (p.x > 0.0) ? r.xy : r.zw;
-	r.x    = (p.y > 0.0) ? r.x : r.y;
-	vec2 q = abs(p) - b + r.x;
-	return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
+float sdf_quad(vec2 p, QuadPoints quadPoints, QuadValues radius,
+               QuadPoints radiusPoints) {
+	if (between_noninclusive(p.x, quadPoints.tl.x, radiusPoints.tl.x) &&
+	    between_noninclusive(p.y, radiusPoints.tl.y, quadPoints.tl.y)) {
+		return length(p - radiusPoints.tl) - radius.tl;
+	}
 
-	vec2 d = abs(p) - b;
-	return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+	if (between_noninclusive(p.x, radiusPoints.tr.x, quadPoints.tr.x) &&
+	    between_noninclusive(p.y, radiusPoints.tr.y, quadPoints.tr.y)) {
+		return length(p - radiusPoints.tr) - radius.tr;
+	}
+
+	if (between_noninclusive(p.x, quadPoints.bl.x, radiusPoints.bl.x) &&
+	    between_noninclusive(p.y, quadPoints.bl.y, radiusPoints.bl.y)) {
+		return length(p - radiusPoints.bl) - radius.bl;
+	}
+
+	if (between_noninclusive(p.x, radiusPoints.br.x, quadPoints.br.x) &&
+	    between_noninclusive(p.y, quadPoints.br.y, radiusPoints.br.y)) {
+		return length(p - radiusPoints.br) - radius.br;
+	}
+
+	if (between_noninclusive(p.x, quadPoints.tl.x, quadPoints.tr.x) &&
+	    between_noninclusive(p.y, quadPoints.bl.y, quadPoints.tl.y)) {
+		return -1.0;
+	}
+
+	return 1.0;
 }
 
 void main() {
-	vec4 radius = vec4(0.25, 0.25, 0.25, 0.0);
+	vec2 p = vec2(inUv.x - 0.5, inUv.y - 0.5);
+
+	vec2 size = inQuadData.quad.size;
+	if (size.x > size.y) {
+		size = vec2(1.0, size.y / size.x);
+	} else {
+		size = vec2(size.x / size.y, 1.0);
+	}
+
+	QuadPoints quadPoints;
+	quadPoints.tl = vec2(-size.x / 2, size.y / 2);
+	quadPoints.tr = vec2(size.x / 2, size.y / 2);
+	quadPoints.bl = vec2(-size.x / 2, -size.y / 2);
+	quadPoints.br = vec2(size.x / 2, -size.y / 2);
+
+	QuadValues radius;
+	radius.tl = 0.5 * min(size.x, size.y);
+	radius.tr = 0.5 * min(size.x, size.y);
+	radius.bl = 0.5 * min(size.x, size.y);
+	radius.br = 0.5 * min(size.x, size.y);
+
+	QuadPoints radiusPoints;
+	radiusPoints.tl =
+	    vec2(quadPoints.tl.x + radius.tl, quadPoints.tl.y - radius.tl);
+	radiusPoints.tr =
+	    vec2(quadPoints.tr.x - radius.tr, quadPoints.tr.y - radius.tr);
+	radiusPoints.bl =
+	    vec2(quadPoints.bl.x + radius.bl, quadPoints.bl.y + radius.bl);
+	radiusPoints.br =
+	    vec2(quadPoints.br.x - radius.br, quadPoints.br.y + radius.br);
+
 	if (inQuadData.fillType == FILL_TYPE_COLOR) {
-		float dist = sdf_quad(inUv, radius);
+		float dist = sdf_quad(p, quadPoints, radius, radiusPoints);
 		float f    = fill_factor(dist, 0.0025);
-		outColor   = composite(vec4(0.0, 0.0, 0.0, 0.0),
-		                       apply_factor(inQuadData.color, f));
+		outColor   = composite(vec4(0.0), apply_factor(inQuadData.color, f));
 	} else if (inQuadData.fillType == FILL_TYPE_TEXTURE) {
 		outColor =
 		    texture(textureSamplers[nonuniformEXT(inQuadData.textureId)], inUv);

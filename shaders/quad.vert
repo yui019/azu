@@ -33,13 +33,30 @@ void main() {
 	float w = d.quad.size.x;
 	float h = d.quad.size.y;
 
-	const vec3 vertices[6] = vec3[6](vec3(x, y, 0.0),     // top left
-	                                 vec3(x + w, y, 0.0), // top right
-	                                 vec3(x, y + h, 0.0), // bottom left
+	vec2 tl = vec2(x, y);
+	vec2 tr = vec2(x + w, y);
+	vec2 bl = vec2(x, y + h);
+	vec2 br = vec2(x + w, y + h);
 
-	                                 vec3(x, y + h, 0.0),     // bottom left
-	                                 vec3(x + w, y + h, 0.0), // bottom right
-	                                 vec3(x + w, y, 0.0)      // top right
+	if (w > h) {
+		tl.y = y + h / 2 - w / 2;
+		tr.y = y + h / 2 - w / 2;
+		bl.y = y + h - h / 2 + w / 2;
+		br.y = y + h - h / 2 + w / 2;
+	} else {
+		tl.x = x + w / 2 - h / 2;
+		bl.x = x + w / 2 - h / 2;
+		tr.x = x + w - w / 2 + h / 2;
+		br.x = x + w - w / 2 + h / 2;
+	}
+
+	const vec3 vertices[6] = vec3[6](vec3(tl, 0.0), // top left
+	                                 vec3(tr, 0.0), // top right
+	                                 vec3(bl, 0.0), // bottom left
+
+	                                 vec3(bl, 0.0), // bottom left
+	                                 vec3(br, 0.0), // bottom right
+	                                 vec3(tr, 0.0)  // top right
 	);
 
 	const vec2 uv[6] = vec2[6](vec2(0.0, 0.0), // top left
