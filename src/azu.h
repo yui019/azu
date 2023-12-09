@@ -39,8 +39,10 @@ class Context {
 	void beginDraw();
 	void endDraw();
 
-	void drawQuad(Quad quad, Color color);
-	void drawQuad(Quad quad, const char *textureName);
+	void drawQuad(Quad quad, Color color,
+	              std::optional<DrawQuadOptions> options = std::nullopt);
+	void drawQuad(Quad quad, const char *textureName,
+	              std::optional<DrawQuadOptions> options = std::nullopt);
 
 	bool createTextureFromFile(const char *name, const char *path);
 

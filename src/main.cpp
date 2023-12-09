@@ -1,4 +1,5 @@
 #include "azu.h"
+#include "util/quad_data.h"
 #include "util/geometry.h"
 #include "util/color.h"
 
@@ -36,11 +37,13 @@ int main() {
 
 		context.beginDraw();
 
-		context.drawQuad(Quad::create(0, 0, 200, 200), "akkarin");
-		context.drawQuad(Quad::create(screenWidth / 2 - width / 2,
-		                              screenHeight / 2 - height / 2, width,
-		                              height),
-		                 Color::white());
+		context.drawQuad(Quad::create(0, 0, 200, 200), "akkarin",
+		                 DrawQuadOptions(QuadCornerValues(0.25), 1.0));
+		context.drawQuad(
+		    Quad::create(screenWidth / 2 - width / 2,
+		                 screenHeight / 2 - height / 2, width, height),
+		    Color::white(),
+		    DrawQuadOptions(QuadCornerValues(0.0, 0.5, 0.5, 0.0), 1.0));
 
 		context.endDraw();
 	}

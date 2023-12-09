@@ -5,6 +5,18 @@ layout(push_constant) uniform constants {
 }
 pushConstants;
 
+struct QuadCornerValues {
+	float tl; // top left
+	float tr; // top right
+	float bl; // bottom left
+	float br; // bottom right
+};
+
+struct DrawQuadOptions {
+	QuadCornerValues radius;
+	float opacity;
+};
+
 struct Quad {
 	vec2 pos;
 	vec2 size;
@@ -15,6 +27,7 @@ struct QuadData {
 	vec4 color;
 	int textureId;
 	int fillType;
+	DrawQuadOptions options;
 };
 
 layout(location = 0) out vec2 outUv;

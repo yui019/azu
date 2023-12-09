@@ -180,17 +180,24 @@ void Context::endDraw() {
 	frameNumber++;
 }
 
-void Context::drawQuad(Quad quad, Color color) {
-	_quadData.push_back({quad, color, 0, QuadDataFillType::Color});
+void Context::drawQuad(Quad quad, Color color,
+                       std::optional<DrawQuadOptions> options) {
+	DrawQuadOptions opt =
+	    options.has_value() ? options.value() : DrawQuadOptions();
+
+	_quadData.push_back(QuadData(quad, color, opt));
 }
 
-void Context::drawQuad(Quad quad, const char *textureName) {
+void Context::drawQuad(Quad quad, const char *textureName,
+                       std::optional<DrawQuadOptions> options) {
 	if (_textures.count(textureName) == 0) {
 		throw std::runtime_error("There is no texture with that name");
 	}
 
-	_quadData.push_back({quad, Color::black(), _textures[textureName].vk_id,
-	                     QuadDataFillType::Texture});
+	DrawQuadOptions opt =
+	    options.has_value() ? options.value() : DrawQuadOptions();
+
+	_quadData.push_back(QuadData(quad, _textures[textureName].vk_id, opt));
 }
 
 Vec2 Context::getTextureDimensions(const char *name) {
@@ -202,7 +209,8 @@ Vec2 Context::getTextureDimensions(const char *name) {
 }
 
 bool Context::createTextureFromFile(const char *name, const char *path) {
-	// early return if a texture with the given name already exists
+	// early return if a texture with the given name
+	// already exists
 	if (_textures.count(name)) {
 		return false;
 	}
@@ -219,8 +227,8 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	void *pixel_ptr        = pixels;
 	VkDeviceSize imageSize = width * height * 4;
 
-	// temporary CPU buffer that will be used to upload to a real GPU buffer
-	// later on
+	// temporary CPU buffer that will be used to upload
+	// to a real GPU buffer later on
 	Buffer stagingBuffer =
 	    Buffer(_vk._allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	           VMA_MEMORY_USAGE_CPU_ONLY);
@@ -258,7 +266,8 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	                        &texture.allocation, nullptr));
 
 	_vk.immediateSubmit([&](VkCommandBuffer cmd) {
-		// TRANSFER IMAGE TO VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+		// TRANSFER IMAGE TO
+		// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 		// ------------------------------------------------------
 
 		VkImageSubresourceRange range;
@@ -302,7 +311,8 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 		                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
 		                       &copyRegion);
 
-		// TRANSFER IMAGE TO VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		// TRANSFER IMAGE TO
+		// VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		// ------------------------------------------------------
 
 		VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
@@ -344,9 +354,10 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
 	descriptorImageInfos.reserve(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
 
-	// Fill in all the descriptors with this same texture
-	// Only doing the minimum number of descriptors (_textures.size()+1),
-	// everything else can stay uninitialized
+	// Fill in all the descriptors with this same
+	// texture Only doing the minimum number of
+	// descriptors (_textures.size()+1), everything else
+	// can stay uninitialized
 	for (uint32_t i = 0; i < _textures.size() + 1; i++) {
 		descriptorImageInfos[i].sampler   = _vk._globalSampler;
 		descriptorImageInfos[i].imageView = texture.imageView;
@@ -354,7 +365,8 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
-	// Change all the previously created descriptors into their own image views
+	// Change all the previously created descriptors
+	// into their own image views
 	for (auto [name, t] : _textures) {
 		descriptorImageInfos[t.vk_id].sampler   = _vk._globalSampler;
 		descriptorImageInfos[t.vk_id].imageView = t.imageView;
