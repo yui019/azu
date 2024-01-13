@@ -36,7 +36,7 @@ VkContext::_loadShaderModuleFromFile(const char *path) const {
 	                      // of the buffer
 
 	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule) !=
+	if (vkCreateShaderModule(Device, &createInfo, nullptr, &shaderModule) !=
 	    VK_SUCCESS) {
 		return std::nullopt;
 	}

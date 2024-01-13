@@ -8,19 +8,19 @@
 namespace azu {
 
 struct QuadCornerValues {
-	float top_left;
-	float top_right;
-	float bottom_left;
-	float bottom_right;
+	float topLeft;
+	float topRight;
+	float bottomLeft;
+	float bottomRight;
 
 	QuadCornerValues(float value = 0.0)
-	    : top_left(value), top_right(value), bottom_left(value),
-	      bottom_right(value) {}
+	    : topLeft(value), topRight(value), bottomLeft(value),
+	      bottomRight(value) {}
 
 	QuadCornerValues(float top_left, float top_right, float bottom_left,
 	                 float bottom_right)
-	    : top_left(top_left), top_right(top_right), bottom_left(bottom_left),
-	      bottom_right(bottom_right) {}
+	    : topLeft(top_left), topRight(top_right), bottomLeft(bottom_left),
+	      bottomRight(bottom_right) {}
 };
 
 struct DrawQuadOptions {

@@ -13,7 +13,7 @@ using namespace azu;
 
 VkContext::VkContext(SDL_Window *window, VkExtent2D windowExtent,
                      bool useValidationLayers) {
-	_windowExtent = windowExtent;
+	WindowExtent = windowExtent;
 
 	_initVulkan(window, useValidationLayers);
 	_initSwapchain();
@@ -40,14 +40,14 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	vkb::Instance vkbInstance = vkbInstanceResult.value();
 
-	_instance        = vkbInstance.instance;
-	_debug_messenger = vkbInstance.debug_messenger;
+	Instance       = vkbInstance.instance;
+	DebugMessenger = vkbInstance.debug_messenger;
 
-	SDL_Vulkan_CreateSurface(window, _instance, &_surface);
+	SDL_Vulkan_CreateSurface(window, Instance, &Surface);
 
 	vkb::PhysicalDeviceSelector selector{vkbInstance};
 	auto physicalDeviceResult =
-	    selector.set_minimum_version(1, 3).set_surface(_surface).select();
+	    selector.set_minimum_version(1, 3).set_surface(Surface).select();
 	if (!physicalDeviceResult) {
 		throw physicalDeviceResult.error();
 	}
@@ -73,8 +73,8 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 
 	vkb::Device vkbDevice = vkbDeviceResult.value();
 
-	_device    = vkbDevice.device;
-	_chosenGPU = physicalDevice.physical_device;
+	Device    = vkbDevice.device;
+	chosenGPU = physicalDevice.physical_device;
 
 	auto graphicsQueueResult = vkbDevice.get_queue(vkb::QueueType::graphics);
 	if (!graphicsQueueResult) {
@@ -87,41 +87,41 @@ void VkContext::_initVulkan(SDL_Window *window, bool useValidationLayers) {
 		throw graphicsQueueFamilyResult.error();
 	}
 
-	_graphicsQueue       = graphicsQueueResult.value();
-	_graphicsQueueFamily = graphicsQueueFamilyResult.value();
+	GraphicsQueue       = graphicsQueueResult.value();
+	GraphicsQueueFamily = graphicsQueueFamilyResult.value();
 
 	// MEMORY ALLOCATOR
 	// ----------------
 
 	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice         = _chosenGPU;
-	allocatorInfo.device                 = _device;
-	allocatorInfo.instance               = _instance;
-	VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_allocator));
+	allocatorInfo.physicalDevice         = chosenGPU;
+	allocatorInfo.device                 = Device;
+	allocatorInfo.instance               = Instance;
+	VK_CHECK(vmaCreateAllocator(&allocatorInfo, &Allocator));
 
-	_deletionQueue.push_function(
-	    [](const VkContext &ctx) { vmaDestroyAllocator(ctx._allocator); });
+	DeletionQueue.pushFunction(
+	    [](const VkContext &ctx) { vmaDestroyAllocator(ctx.Allocator); });
 }
 
 void VkContext::_initSwapchain() {
-	vkb::SwapchainBuilder vkbSwapchainBuilder{_chosenGPU, _device, _surface};
+	vkb::SwapchainBuilder vkbSwapchainBuilder{chosenGPU, Device, Surface};
 
 	vkb::Swapchain vkbSwapchain =
 	    vkbSwapchainBuilder
 	        .use_default_format_selection()
 	        // use vsync present mode
 	        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
-	        .set_desired_extent(_windowExtent.width, _windowExtent.height)
+	        .set_desired_extent(WindowExtent.width, WindowExtent.height)
 	        .build()
 	        .value();
 
-	_swapchain            = vkbSwapchain.swapchain;
-	_swapchainImages      = vkbSwapchain.get_images().value();
-	_swapchainImageViews  = vkbSwapchain.get_image_views().value();
-	_swapchainImageFormat = vkbSwapchain.image_format;
+	Swapchain            = vkbSwapchain.swapchain;
+	SwapchainImages      = vkbSwapchain.get_images().value();
+	SwapchainImageViews  = vkbSwapchain.get_image_views().value();
+	SwapchainImageFormat = vkbSwapchain.image_format;
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroySwapchainKHR(ctx._device, ctx._swapchain, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroySwapchainKHR(ctx.Device, ctx.Swapchain, nullptr);
 	});
 }
 
@@ -130,7 +130,7 @@ void VkContext::_initDefaultRenderpass() {
 	// ----------------
 
 	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format                  = _swapchainImageFormat;
+	colorAttachment.format                  = SwapchainImageFormat;
 	colorAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
@@ -171,62 +171,60 @@ void VkContext::_initDefaultRenderpass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies   = &dependency;
 
-	VK_CHECK(
-	    vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass));
+	VK_CHECK(vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyRenderPass(ctx._device, ctx._renderPass, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyRenderPass(ctx.Device, ctx.RenderPass, nullptr);
 	});
 }
 
 void VkContext::_initFramebuffers() {
 	VkFramebufferCreateInfo framebufferInfo =
-	    vk_init::framebufferCreateInfo(_renderPass, _windowExtent);
+	    vk_init::framebufferCreateInfo(RenderPass, WindowExtent);
 
-	const uint32_t swapchainImageCount = _swapchainImages.size();
-	_framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
+	const uint32_t swapchainImageCount = SwapchainImages.size();
+	Framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
 
 	for (uint32_t i = 0; i < swapchainImageCount; i++) {
-		framebufferInfo.pAttachments = &_swapchainImageViews[i];
-		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr,
-		                             &_framebuffers[i]));
+		framebufferInfo.pAttachments = &SwapchainImageViews[i];
+		VK_CHECK(vkCreateFramebuffer(Device, &framebufferInfo, nullptr,
+		                             &Framebuffers[i]));
 	}
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		for (uint32_t i = 0; i < ctx._framebuffers.size(); i++) {
-			vkDestroyFramebuffer(ctx._device, ctx._framebuffers[i], nullptr);
-			vkDestroyImageView(ctx._device, ctx._swapchainImageViews[i],
-			                   nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		for (uint32_t i = 0; i < ctx.Framebuffers.size(); i++) {
+			vkDestroyFramebuffer(ctx.Device, ctx.Framebuffers[i], nullptr);
+			vkDestroyImageView(ctx.Device, ctx.SwapchainImageViews[i], nullptr);
 		}
 	});
 }
 
 void VkContext::_initCommands() {
 	VkCommandPoolCreateInfo commandPoolInfo = vk_init::commandPoolCreateInfo(
-	    _graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	    GraphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 	VK_CHECK(
-	    vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
+	    vkCreateCommandPool(Device, &commandPoolInfo, nullptr, &CommandPool));
 
 	VkCommandBufferAllocateInfo cmdAllocInfo =
-	    vk_init::commandBufferAllocateInfo(_commandPool, 1);
+	    vk_init::commandBufferAllocateInfo(CommandPool, 1);
 
 	VK_CHECK(
-	    vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+	    vkAllocateCommandBuffers(Device, &cmdAllocInfo, &MainCommandBuffer));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyCommandPool(ctx._device, ctx._commandPool, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyCommandPool(ctx.Device, ctx.CommandPool, nullptr);
 	});
 
 	// also a command pool and command buffer for the immediateSubmit function
 
 	VkCommandPoolCreateInfo immediateSubmitPool =
-	    vk_init::commandPoolCreateInfo(_graphicsQueueFamily);
-	VK_CHECK(vkCreateCommandPool(_device, &immediateSubmitPool, nullptr,
+	    vk_init::commandPoolCreateInfo(GraphicsQueueFamily);
+	VK_CHECK(vkCreateCommandPool(Device, &immediateSubmitPool, nullptr,
 	                             &_immediateSubmitContext.commandPool));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyCommandPool(ctx._device,
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyCommandPool(ctx.Device,
 		                     ctx._immediateSubmitContext.commandPool, nullptr);
 	});
 
@@ -234,7 +232,7 @@ void VkContext::_initCommands() {
 	    vk_init::commandBufferAllocateInfo(_immediateSubmitContext.commandPool,
 	                                       1);
 
-	VK_CHECK(vkAllocateCommandBuffers(_device, &immediateSubmitBuffer,
+	VK_CHECK(vkAllocateCommandBuffers(Device, &immediateSubmitBuffer,
 	                                  &_immediateSubmitContext.commandBuffer));
 }
 
@@ -246,32 +244,32 @@ void VkContext::_initSyncStructures() {
 	VkFenceCreateInfo fenceCreateInfo =
 	    vk_init::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
-	VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
+	VK_CHECK(vkCreateFence(Device, &fenceCreateInfo, nullptr, &RenderFence));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyFence(ctx._device, ctx._renderFence, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyFence(ctx.Device, ctx.RenderFence, nullptr);
 	});
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vk_init::semaphoreCreateInfo();
 
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
-	                           &_presentSemaphore));
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr,
-	                           &_renderSemaphore));
+	VK_CHECK(vkCreateSemaphore(Device, &semaphoreCreateInfo, nullptr,
+	                           &PresentSemaphore));
+	VK_CHECK(vkCreateSemaphore(Device, &semaphoreCreateInfo, nullptr,
+	                           &RenderSemaphore));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroySemaphore(ctx._device, ctx._presentSemaphore, nullptr);
-		vkDestroySemaphore(ctx._device, ctx._renderSemaphore, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroySemaphore(ctx.Device, ctx.PresentSemaphore, nullptr);
+		vkDestroySemaphore(ctx.Device, ctx.RenderSemaphore, nullptr);
 	});
 
 	// also a fence for the immedateSubmit function
 
 	VkFenceCreateInfo immediateSubmitFence = vk_init::fenceCreateInfo();
 
-	VK_CHECK(vkCreateFence(_device, &immediateSubmitFence, nullptr,
+	VK_CHECK(vkCreateFence(Device, &immediateSubmitFence, nullptr,
 	                       &_immediateSubmitContext.fence));
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyFence(ctx._device, ctx._immediateSubmitContext.fence, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyFence(ctx.Device, ctx._immediateSubmitContext.fence, nullptr);
 	});
 }
 
@@ -292,12 +290,11 @@ void VkContext::_initDescriptors() {
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes    = sizes.data();
 
-	VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr,
-	                                &_globalDescriptorPool));
+	VK_CHECK(vkCreateDescriptorPool(Device, &pool_info, nullptr,
+	                                &GlobalDescriptorPool));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyDescriptorPool(ctx._device, ctx._globalDescriptorPool,
-		                        nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyDescriptorPool(ctx.Device, ctx.GlobalDescriptorPool, nullptr);
 	});
 
 	// CREATE DESCRIPTOR SET LAYOUT
@@ -337,24 +334,24 @@ void VkContext::_initDescriptors() {
 	layoutInfo.flags        = 0;
 	layoutInfo.pNext        = &extendedInfo;
 
-	VK_CHECK(vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr,
-	                                     &_globalDescriptorSetLayout));
+	VK_CHECK(vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr,
+	                                     &GlobalDescriptorSetLayout));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyDescriptorSetLayout(ctx._device,
-		                             ctx._globalDescriptorSetLayout, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyDescriptorSetLayout(ctx.Device, ctx.GlobalDescriptorSetLayout,
+		                             nullptr);
 	});
 
 	// CREATE QUADS BUFFER
 	// -------------------
 
-	_quadsBuffer =
-	    Buffer(_allocator, INITIAL_QUADS_BUFFER_SIZE,
+	QuadsBuffer =
+	    Buffer(Allocator, INITIAL_QUADS_BUFFER_SIZE,
 	           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vmaDestroyBuffer(ctx._allocator, ctx._quadsBuffer.buffer,
-		                 ctx._quadsBuffer.allocation);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vmaDestroyBuffer(ctx.Allocator, ctx.QuadsBuffer.VkBuffer,
+		                 ctx.QuadsBuffer.Allocation);
 	});
 
 	// ALLOCATE DESCRIPTOR SET
@@ -363,18 +360,18 @@ void VkContext::_initDescriptors() {
 	VkDescriptorSetAllocateInfo allocateInfo = {};
 	allocateInfo.pNext                       = nullptr;
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorPool     = _globalDescriptorPool;
+	allocateInfo.descriptorPool     = GlobalDescriptorPool;
 	allocateInfo.descriptorSetCount = 1;
-	allocateInfo.pSetLayouts        = &_globalDescriptorSetLayout;
+	allocateInfo.pSetLayouts        = &GlobalDescriptorSetLayout;
 
-	VK_CHECK(vkAllocateDescriptorSets(_device, &allocateInfo,
-	                                  &_globalDescriptorSet));
+	VK_CHECK(
+	    vkAllocateDescriptorSets(Device, &allocateInfo, &GlobalDescriptorSet));
 
 	// UPDATE DESCRIPTOR SET TO POINT TO QUADS BUFFER
 	// ----------------------------------------------
 
 	VkDescriptorBufferInfo descriptorBufferInfo;
-	descriptorBufferInfo.buffer = _quadsBuffer.buffer;
+	descriptorBufferInfo.buffer = QuadsBuffer.VkBuffer;
 	descriptorBufferInfo.offset = 0;
 	descriptorBufferInfo.range  = INITIAL_QUADS_BUFFER_SIZE;
 
@@ -382,22 +379,22 @@ void VkContext::_initDescriptors() {
 	setWriteBuffer.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	setWriteBuffer.pNext           = nullptr;
 	setWriteBuffer.dstBinding      = 0;
-	setWriteBuffer.dstSet          = _globalDescriptorSet;
+	setWriteBuffer.dstSet          = GlobalDescriptorSet;
 	setWriteBuffer.descriptorCount = 1;
 	setWriteBuffer.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	setWriteBuffer.pBufferInfo     = &descriptorBufferInfo;
 
-	vkUpdateDescriptorSets(_device, 1, &setWriteBuffer, 0, nullptr);
+	vkUpdateDescriptorSets(Device, 1, &setWriteBuffer, 0, nullptr);
 }
 
 void VkContext::_initSampler() {
 	VkSamplerCreateInfo samplerInfo = vk_init::samplerCreateInfo(
 	    VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
-	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_globalSampler));
+	VK_CHECK(vkCreateSampler(Device, &samplerInfo, nullptr, &GlobalSampler));
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroySampler(ctx._device, ctx._globalSampler, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroySampler(ctx.Device, ctx.GlobalSampler, nullptr);
 	});
 }
 
@@ -431,66 +428,66 @@ void VkContext::_initPipelines() {
 	VkPushConstantRange pushConstantRanges[] = {
 	    {VK_SHADER_STAGE_VERTEX_BIT, 0, 4 * 4 * 4}
     };
-	VkDescriptorSetLayout descriptorSetLayouts[] = {_globalDescriptorSetLayout};
+	VkDescriptorSetLayout descriptorSetLayouts[] = {GlobalDescriptorSetLayout};
 	VkPipelineLayoutCreateInfo pipeline_layout_info =
 	    vk_init::pipelineLayoutCreateInfo(pushConstantRanges,
 	                                      descriptorSetLayouts);
 
-	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr,
-	                                &_pipelineLayout));
+	VK_CHECK(vkCreatePipelineLayout(Device, &pipeline_layout_info, nullptr,
+	                                &PipelineLayout));
 
 	// BUILD PIPELINE
 	// --------------
 
 	PipelineBuilder pipelineBuilder;
 
-	pipelineBuilder.shaderStages = {
+	pipelineBuilder.ShaderStages = {
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
 	                                           triangleVertShader.value()),
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
 	                                           triangleFragShader.value())};
 
-	pipelineBuilder.vertexInputInfo =
+	pipelineBuilder.VertexInputInfo =
 	    vk_init::pipelineVertexInputStateCreateInfo();
 
-	pipelineBuilder.inputAssembly =
+	pipelineBuilder.InputAssembly =
 	    vk_init::pipelineInputAssemblyStateCreateInfo(
 	        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-	pipelineBuilder.rasterizer =
+	pipelineBuilder.Rasterizer =
 	    vk_init::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
-	pipelineBuilder.multisampling =
+	pipelineBuilder.Multisampling =
 	    vk_init::pipelineMultisampleStateCreateInfo();
 
-	pipelineBuilder.colorBlendAttachment =
+	pipelineBuilder.ColorBlendAttachment =
 	    vk_init::pipelineColorBlendAttachmentState();
 
 	// build viewport and scissor from the swapchain extents
-	pipelineBuilder.viewport.x        = 0.0f;
-	pipelineBuilder.viewport.y        = 0.0f;
-	pipelineBuilder.viewport.width    = (float)_windowExtent.width;
-	pipelineBuilder.viewport.height   = (float)_windowExtent.height;
-	pipelineBuilder.viewport.minDepth = 0.0f;
-	pipelineBuilder.viewport.maxDepth = 1.0f;
-	pipelineBuilder.scissor.offset    = {0, 0};
-	pipelineBuilder.scissor.extent    = _windowExtent;
+	pipelineBuilder.Viewport.x        = 0.0f;
+	pipelineBuilder.Viewport.y        = 0.0f;
+	pipelineBuilder.Viewport.width    = (float)WindowExtent.width;
+	pipelineBuilder.Viewport.height   = (float)WindowExtent.height;
+	pipelineBuilder.Viewport.minDepth = 0.0f;
+	pipelineBuilder.Viewport.maxDepth = 1.0f;
+	pipelineBuilder.Scissor.offset    = {0, 0};
+	pipelineBuilder.Scissor.extent    = WindowExtent;
 
-	pipelineBuilder.pipelineLayout = _pipelineLayout;
+	pipelineBuilder.PipelineLayout = PipelineLayout;
 
 	// finally build the pipeline
-	auto pipeline = pipelineBuilder.build(_device, _renderPass);
+	auto pipeline = pipelineBuilder.build(Device, RenderPass);
 	if (pipeline) {
-		_pipeline = pipeline.value();
+		Pipeline = pipeline.value();
 	} else {
 		throw std::runtime_error("Failed to create pipeline");
 	}
 
-	vkDestroyShaderModule(_device, triangleFragShader.value(), nullptr);
-	vkDestroyShaderModule(_device, triangleVertShader.value(), nullptr);
+	vkDestroyShaderModule(Device, triangleFragShader.value(), nullptr);
+	vkDestroyShaderModule(Device, triangleVertShader.value(), nullptr);
 
-	_deletionQueue.push_function([](const VkContext &ctx) {
-		vkDestroyPipeline(ctx._device, ctx._pipeline, nullptr);
-		vkDestroyPipelineLayout(ctx._device, ctx._pipelineLayout, nullptr);
+	DeletionQueue.pushFunction([](const VkContext &ctx) {
+		vkDestroyPipeline(ctx.Device, ctx.Pipeline, nullptr);
+		vkDestroyPipelineLayout(ctx.Device, ctx.PipelineLayout, nullptr);
 	});
 }

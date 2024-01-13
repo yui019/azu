@@ -41,29 +41,29 @@ Context::~Context() {
 	SDL_DestroyWindow(_window);
 }
 
-void Context::beginDraw() {
+void Context::BeginDraw() {
 	// reset this frame's quad data
 	_quadData.clear();
 
 	// wait until the GPU has finished rendering the last frame. Timeout of 1
 	// second
 	VK_CHECK(
-	    vkWaitForFences(_vk._device, 1, &_vk._renderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(_vk._device, 1, &_vk._renderFence));
+	    vkWaitForFences(_vk.Device, 1, &_vk.RenderFence, true, 1000000000));
+	VK_CHECK(vkResetFences(_vk.Device, 1, &_vk.RenderFence));
 
 	// request image from the swapchain (1 sec timeout) and signal
 	// _presentSemaphore
-	VK_CHECK(vkAcquireNextImageKHR(_vk._device, _vk._swapchain, 1000000000,
-	                               _vk._presentSemaphore, nullptr,
+	VK_CHECK(vkAcquireNextImageKHR(_vk.Device, _vk.Swapchain, 1000000000,
+	                               _vk.PresentSemaphore, nullptr,
 	                               &_swapchainImageIndex));
 
-	VK_CHECK(vkResetCommandBuffer(_vk._mainCommandBuffer, 0));
+	VK_CHECK(vkResetCommandBuffer(_vk.MainCommandBuffer, 0));
 
 	// BEGIN COMMAND BUFFER
 	// --------------------
 
 	// naming it cmd for shorter writing
-	VkCommandBuffer cmd = _vk._mainCommandBuffer;
+	VkCommandBuffer cmd = _vk.MainCommandBuffer;
 
 	// this command buffer will be used
 	// exactly once, so the usage_one_time flag is used
@@ -89,11 +89,11 @@ void Context::beginDraw() {
 	rpInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpInfo.pNext                 = nullptr;
 
-	rpInfo.renderPass          = _vk._renderPass;
+	rpInfo.renderPass          = _vk.RenderPass;
 	rpInfo.renderArea.offset.x = 0;
 	rpInfo.renderArea.offset.y = 0;
-	rpInfo.renderArea.extent   = _vk._windowExtent;
-	rpInfo.framebuffer         = _vk._framebuffers[_swapchainImageIndex];
+	rpInfo.renderArea.extent   = _vk.WindowExtent;
+	rpInfo.framebuffer         = _vk.Framebuffers[_swapchainImageIndex];
 
 	// connect clear values
 	rpInfo.clearValueCount = 1;
@@ -102,24 +102,24 @@ void Context::beginDraw() {
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void Context::endDraw() {
+void Context::EndDraw() {
 	// fill quads buffer with the quads that were rendered by the user in
 	// drawQuads
-	_vk.fillQuadsBuffer(_quadData);
+	_vk.FillQuadsBuffer(_quadData);
 
 	// RENDERING COMMANDS
 	// ------------------
 
 	// naming it cmd for shorter writing
-	VkCommandBuffer cmd = _vk._mainCommandBuffer;
+	VkCommandBuffer cmd = _vk.MainCommandBuffer;
 
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk._pipeline);
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk.Pipeline);
 
 	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                        _vk._pipelineLayout, 0, 1,
-	                        &_vk._globalDescriptorSet, 0, nullptr);
+	                        _vk.PipelineLayout, 0, 1, &_vk.GlobalDescriptorSet,
+	                        0, nullptr);
 
-	vkCmdPushConstants(cmd, _vk._pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+	vkCmdPushConstants(cmd, _vk.PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
 	                   4 * 4 * 4, &_projectionMatrix);
 
 	vkCmdDraw(cmd, 6 * _quadData.size(), 1, 0, 0);
@@ -144,17 +144,17 @@ void Context::endDraw() {
 	submit.pWaitDstStageMask = &waitStage;
 
 	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores    = &_vk._presentSemaphore;
+	submit.pWaitSemaphores    = &_vk.PresentSemaphore;
 
 	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores    = &_vk._renderSemaphore;
+	submit.pSignalSemaphores    = &_vk.RenderSemaphore;
 
 	submit.commandBufferCount = 1;
 	submit.pCommandBuffers    = &cmd;
 
 	// submit command buffer to the queue and execute it.
 	//  _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(_vk._graphicsQueue, 1, &submit, _vk._renderFence));
+	VK_CHECK(vkQueueSubmit(_vk.GraphicsQueue, 1, &submit, _vk.RenderFence));
 
 	// PRESENT TO SWAPCHAIN
 	// --------------------
@@ -167,20 +167,20 @@ void Context::endDraw() {
 	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext            = nullptr;
 
-	presentInfo.pSwapchains    = &_vk._swapchain;
+	presentInfo.pSwapchains    = &_vk.Swapchain;
 	presentInfo.swapchainCount = 1;
 
-	presentInfo.pWaitSemaphores    = &_vk._renderSemaphore;
+	presentInfo.pWaitSemaphores    = &_vk.RenderSemaphore;
 	presentInfo.waitSemaphoreCount = 1;
 
 	presentInfo.pImageIndices = &_swapchainImageIndex;
 
-	VK_CHECK(vkQueuePresentKHR(_vk._graphicsQueue, &presentInfo));
+	VK_CHECK(vkQueuePresentKHR(_vk.GraphicsQueue, &presentInfo));
 
-	frameNumber++;
+	FrameNumber++;
 }
 
-void Context::drawQuad(Quad quad, Color color,
+void Context::DrawQuad(Quad quad, Color color,
                        std::optional<DrawQuadOptions> options) {
 	DrawQuadOptions opt =
 	    options.has_value() ? options.value() : DrawQuadOptions();
@@ -188,7 +188,7 @@ void Context::drawQuad(Quad quad, Color color,
 	_quadData.push_back(QuadData(quad, color, opt));
 }
 
-void Context::drawQuad(Quad quad, const char *textureName,
+void Context::DrawQuad(Quad quad, const char *textureName,
                        std::optional<DrawQuadOptions> options) {
 	if (_textures.count(textureName) == 0) {
 		throw std::runtime_error("There is no texture with that name");
@@ -197,10 +197,10 @@ void Context::drawQuad(Quad quad, const char *textureName,
 	DrawQuadOptions opt =
 	    options.has_value() ? options.value() : DrawQuadOptions();
 
-	_quadData.push_back(QuadData(quad, _textures[textureName].vk_id, opt));
+	_quadData.push_back(QuadData(quad, _textures[textureName].vkID, opt));
 }
 
-Vec2 Context::getTextureDimensions(const char *name) {
+Vec2 Context::GetTextureDimensions(const char *name) {
 	if (_textures.count(name) == 0) {
 		throw std::runtime_error("There is no texture with that name");
 	}
@@ -208,7 +208,7 @@ Vec2 Context::getTextureDimensions(const char *name) {
 	return {(float)_textures[name].width, (float)_textures[name].height};
 }
 
-bool Context::createTextureFromFile(const char *name, const char *path) {
+bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	// early return if a texture with the given name
 	// already exists
 	if (_textures.count(name)) {
@@ -230,12 +230,12 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	// temporary CPU buffer that will be used to upload
 	// to a real GPU buffer later on
 	Buffer stagingBuffer =
-	    Buffer(_vk._allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	    Buffer(_vk.Allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	           VMA_MEMORY_USAGE_CPU_ONLY);
 
 	// copy data to stagingBuffer and unmap its memory
-	memcpy(stagingBuffer.data, pixel_ptr, static_cast<size_t>(imageSize));
-	vmaUnmapMemory(_vk._allocator, stagingBuffer.allocation);
+	memcpy(stagingBuffer.Data, pixel_ptr, static_cast<size_t>(imageSize));
+	vmaUnmapMemory(_vk.Allocator, stagingBuffer.Allocation);
 
 	// image data is now in stagingBuffer
 	stbi_image_free(pixels);
@@ -253,7 +253,7 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	    imageExtent);
 
 	Texture texture;
-	texture.vk_id  = _textures.size();
+	texture.vkID   = _textures.size();
 	texture.width  = width;
 	texture.height = height;
 
@@ -261,11 +261,10 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	imageAllocateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	// allocate and create the image
-	VK_CHECK(vmaCreateImage(_vk._allocator, &imageCreateInfo,
-	                        &imageAllocateInfo, &texture.image,
-	                        &texture.allocation, nullptr));
+	VK_CHECK(vmaCreateImage(_vk.Allocator, &imageCreateInfo, &imageAllocateInfo,
+	                        &texture.Image, &texture.allocation, nullptr));
 
-	_vk.immediateSubmit([&](VkCommandBuffer cmd) {
+	_vk.ImmediateSubmit([&](VkCommandBuffer cmd) {
 		// TRANSFER IMAGE TO
 		// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 		// ------------------------------------------------------
@@ -283,7 +282,7 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 		imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageBarrier_toTransfer.newLayout =
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		imageBarrier_toTransfer.image            = texture.image;
+		imageBarrier_toTransfer.image            = texture.Image;
 		imageBarrier_toTransfer.subresourceRange = range;
 
 		imageBarrier_toTransfer.srcAccessMask = 0;
@@ -307,7 +306,7 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 		copyRegion.imageSubresource.layerCount     = 1;
 		copyRegion.imageExtent                     = imageExtent;
 
-		vkCmdCopyBufferToImage(cmd, stagingBuffer.buffer, texture.image,
+		vkCmdCopyBufferToImage(cmd, stagingBuffer.VkBuffer, texture.Image,
 		                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
 		                       &copyRegion);
 
@@ -330,16 +329,16 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 		                     nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 	});
 
-	_vk._deletionQueue.push_function([texture](const VkContext &ctx) {
-		vmaDestroyImage(ctx._allocator, texture.image, texture.allocation);
+	_vk._deletionQueue.pushFunction([texture](const VkContext &ctx) {
+		vmaDestroyImage(ctx.Allocator, texture.Image, texture.allocation);
 	});
 
-	vmaDestroyBuffer(_vk._allocator, stagingBuffer.buffer,
-	                 stagingBuffer.allocation);
+	vmaDestroyBuffer(_vk.Allocator, stagingBuffer.VkBuffer,
+	                 stagingBuffer.Allocation);
 
 	VkImageViewCreateInfo imageViewInfo{};
 	imageViewInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	imageViewInfo.image    = texture.image;
+	imageViewInfo.image    = texture.Image;
 	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	imageViewInfo.format   = imageFormat;
 	imageViewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -348,7 +347,7 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	imageViewInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewInfo.subresourceRange.layerCount     = 1;
 
-	VK_CHECK(vkCreateImageView(_vk._device, &imageViewInfo, nullptr,
+	VK_CHECK(vkCreateImageView(_vk.Device, &imageViewInfo, nullptr,
 	                           &texture.imageView));
 
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
@@ -359,7 +358,7 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	// descriptors (_textures.size()+1), everything else
 	// can stay uninitialized
 	for (uint32_t i = 0; i < _textures.size() + 1; i++) {
-		descriptorImageInfos[i].sampler   = _vk._globalSampler;
+		descriptorImageInfos[i].sampler   = _vk.GlobalSampler;
 		descriptorImageInfos[i].imageView = texture.imageView;
 		descriptorImageInfos[i].imageLayout =
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -368,9 +367,9 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	// Change all the previously created descriptors
 	// into their own image views
 	for (auto [name, t] : _textures) {
-		descriptorImageInfos[t.vk_id].sampler   = _vk._globalSampler;
-		descriptorImageInfos[t.vk_id].imageView = t.imageView;
-		descriptorImageInfos[t.vk_id].imageLayout =
+		descriptorImageInfos[t.vkID].sampler   = _vk.GlobalSampler;
+		descriptorImageInfos[t.vkID].imageView = t.imageView;
+		descriptorImageInfos[t.vkID].imageLayout =
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
@@ -378,15 +377,15 @@ bool Context::createTextureFromFile(const char *name, const char *path) {
 	setWriteImage.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	setWriteImage.pNext                = nullptr;
 	setWriteImage.dstBinding           = 1;
-	setWriteImage.dstSet               = _vk._globalDescriptorSet;
+	setWriteImage.dstSet               = _vk.GlobalDescriptorSet;
 	setWriteImage.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	setWriteImage.descriptorCount = _textures.size() + 1;
 	setWriteImage.pImageInfo      = descriptorImageInfos.data();
 
-	vkUpdateDescriptorSets(_vk._device, 1, &setWriteImage, 0, nullptr);
+	vkUpdateDescriptorSets(_vk.Device, 1, &setWriteImage, 0, nullptr);
 
-	_vk._deletionQueue.push_function([texture](const VkContext &ctx) {
-		vkDestroyImageView(ctx._device, texture.imageView, nullptr);
+	_vk._deletionQueue.pushFunction([texture](const VkContext &ctx) {
+		vkDestroyImageView(ctx.Device, texture.imageView, nullptr);
 	});
 
 	_textures[name] = texture;

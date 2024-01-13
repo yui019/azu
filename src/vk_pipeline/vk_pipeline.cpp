@@ -8,9 +8,9 @@ std::optional<VkPipeline> PipelineBuilder::build(VkDevice device,
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.pNext = nullptr;
 	viewportState.viewportCount = 1;
-	viewportState.pViewports    = &viewport;
+	viewportState.pViewports    = &Viewport;
 	viewportState.scissorCount  = 1;
-	viewportState.pScissors     = &scissor;
+	viewportState.pScissors     = &Scissor;
 
 	VkPipelineColorBlendStateCreateInfo colorBlending = {};
 	colorBlending.sType =
@@ -19,7 +19,7 @@ std::optional<VkPipeline> PipelineBuilder::build(VkDevice device,
 	colorBlending.logicOpEnable     = VK_FALSE;
 	colorBlending.logicOp           = VK_LOGIC_OP_COPY;
 	colorBlending.attachmentCount   = 1;
-	colorBlending.pAttachments      = &colorBlendAttachment;
+	colorBlending.pAttachments      = &ColorBlendAttachment;
 	colorBlending.blendConstants[0] = 1.0f;
 	colorBlending.blendConstants[1] = 1.0f;
 	colorBlending.blendConstants[2] = 1.0f;
@@ -29,15 +29,15 @@ std::optional<VkPipeline> PipelineBuilder::build(VkDevice device,
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.pNext      = nullptr;
-	pipelineInfo.stageCount = shaderStages.size();
-	pipelineInfo.pStages    = shaderStages.data();
-	pipelineInfo.pVertexInputState   = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.stageCount = ShaderStages.size();
+	pipelineInfo.pStages    = ShaderStages.data();
+	pipelineInfo.pVertexInputState   = &VertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &InputAssembly;
 	pipelineInfo.pViewportState      = &viewportState;
-	pipelineInfo.pRasterizationState = &rasterizer;
-	pipelineInfo.pMultisampleState   = &multisampling;
+	pipelineInfo.pRasterizationState = &Rasterizer;
+	pipelineInfo.pMultisampleState   = &Multisampling;
 	pipelineInfo.pColorBlendState    = &colorBlending;
-	pipelineInfo.layout              = pipelineLayout;
+	pipelineInfo.layout              = PipelineLayout;
 	pipelineInfo.renderPass          = pass;
 	pipelineInfo.subpass             = 0;
 	pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;

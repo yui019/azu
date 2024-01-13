@@ -8,10 +8,10 @@ namespace azu {
 
 class Buffer {
   public:
-	VkBuffer buffer;
-	VmaAllocation allocation;
+	VkBuffer VkBuffer;
+	VmaAllocation Allocation;
 
-	void *data;
+	void *Data;
 
 	Buffer() = default;
 

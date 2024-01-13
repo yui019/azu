@@ -32,21 +32,21 @@ class Context {
 	               // elements on every user call of drawQuad
 
   public:
-	uint32_t frameNumber = 0;
+	uint32_t FrameNumber = 0;
 
 	Context(std::string_view title, uint32_t width, uint32_t height);
 
-	void beginDraw();
-	void endDraw();
+	void BeginDraw();
+	void EndDraw();
 
-	void drawQuad(Quad quad, Color color,
+	void DrawQuad(Quad quad, Color color,
 	              std::optional<DrawQuadOptions> options = std::nullopt);
-	void drawQuad(Quad quad, const char *textureName,
+	void DrawQuad(Quad quad, const char *textureName,
 	              std::optional<DrawQuadOptions> options = std::nullopt);
 
-	bool createTextureFromFile(const char *name, const char *path);
+	bool CreateTextureFromFile(const char *name, const char *path);
 
-	Vec2 getTextureDimensions(const char *name);
+	Vec2 GetTextureDimensions(const char *name);
 
 	~Context();
 };

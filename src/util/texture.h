@@ -7,14 +7,13 @@
 
 namespace azu {
 
-class Texture {
-  public:
+struct Texture {
 	VkImage image;
 	VmaAllocation allocation;
 	VkImageView imageView;
 	uint32_t width;
 	uint32_t height;
-	uint32_t vk_id;
+	uint32_t vkId;
 };
 
 } // namespace azu

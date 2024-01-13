@@ -10,7 +10,7 @@ int main() {
 	const int screenHeight = 600;
 	auto context           = Context("Test", screenWidth, screenHeight);
 
-	context.createTextureFromFile("akkarin", "res/akkarin.jpg");
+	context.CreateTextureFromFile("akkarin", "res/akkarin.jpg");
 
 	int width     = 300;
 	int height    = 300;
@@ -35,17 +35,17 @@ int main() {
 			}
 		}
 
-		context.beginDraw();
+		context.BeginDraw();
 
-		context.drawQuad(Quad::create(0, 0, 200, 200), "akkarin",
+		context.DrawQuad(Quad::create(0, 0, 200, 200), "akkarin",
 		                 DrawQuadOptions(QuadCornerValues(0.25), 1.0));
-		context.drawQuad(
+		context.DrawQuad(
 		    Quad::create(screenWidth / 2 - width / 2,
 		                 screenHeight / 2 - height / 2, width, height),
 		    Color::white(),
 		    DrawQuadOptions(QuadCornerValues(0.0, 0.5, 0.5, 0.0), 1.0));
 
-		context.endDraw();
+		context.EndDraw();
 	}
 
 	return 0;

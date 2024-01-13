@@ -4,12 +4,12 @@
 
 using namespace azu;
 
-void VkContext::fillQuadsBuffer(std::span<QuadData> quadData) {
-	memset(_quadsBuffer.data, 0, INITIAL_QUADS_BUFFER_SIZE);
-	memcpy(_quadsBuffer.data, quadData.data(), quadData.size_bytes());
+void VkContext::FillQuadsBuffer(std::span<QuadData> quadData) {
+	memset(QuadsBuffer.Data, 0, INITIAL_QUADS_BUFFER_SIZE);
+	memcpy(QuadsBuffer.Data, quadData.data(), quadData.size_bytes());
 }
 
-void VkContext::immediateSubmit(
+void VkContext::ImmediateSubmit(
     std::function<void(VkCommandBuffer cmd)> &&function) {
 	VkCommandBuffer cmd = _immediateSubmitContext.commandBuffer;
 
@@ -30,13 +30,13 @@ void VkContext::immediateSubmit(
 	// submit command buffer to the queue and execute it.
 	//  _immediateSubmitContext.fence will now block until the commands finish
 	//  execution
-	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit,
+	VK_CHECK(vkQueueSubmit(GraphicsQueue, 1, &submit,
 	                       _immediateSubmitContext.fence));
 
-	vkWaitForFences(_device, 1, &_immediateSubmitContext.fence, true,
+	vkWaitForFences(Device, 1, &_immediateSubmitContext.fence, true,
 	                9999999999);
-	vkResetFences(_device, 1, &_immediateSubmitContext.fence);
+	vkResetFences(Device, 1, &_immediateSubmitContext.fence);
 
 	// reset the command buffer
-	vkResetCommandPool(_device, _immediateSubmitContext.commandPool, 0);
+	vkResetCommandPool(Device, _immediateSubmitContext.commandPool, 0);
 }
