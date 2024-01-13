@@ -8,7 +8,7 @@ namespace azu {
 
 class Buffer {
   public:
-	VkBuffer VkBuffer;
+	VkBuffer VulkanBuffer;
 	VmaAllocation Allocation;
 
 	void *Data;

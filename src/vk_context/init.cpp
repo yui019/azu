@@ -350,7 +350,7 @@ void VkContext::_initDescriptors() {
 	           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 	DeletionQueue.pushFunction([](const VkContext &ctx) {
-		vmaDestroyBuffer(ctx.Allocator, ctx.QuadsBuffer.VkBuffer,
+		vmaDestroyBuffer(ctx.Allocator, ctx.QuadsBuffer.VulkanBuffer,
 		                 ctx.QuadsBuffer.Allocation);
 	});
 
@@ -371,7 +371,7 @@ void VkContext::_initDescriptors() {
 	// ----------------------------------------------
 
 	VkDescriptorBufferInfo descriptorBufferInfo;
-	descriptorBufferInfo.buffer = QuadsBuffer.VkBuffer;
+	descriptorBufferInfo.buffer = QuadsBuffer.VulkanBuffer;
 	descriptorBufferInfo.offset = 0;
 	descriptorBufferInfo.range  = INITIAL_QUADS_BUFFER_SIZE;
 

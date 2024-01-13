@@ -197,7 +197,7 @@ void Context::DrawQuad(Quad quad, const char *textureName,
 	DrawQuadOptions opt =
 	    options.has_value() ? options.value() : DrawQuadOptions();
 
-	_quadData.push_back(QuadData(quad, _textures[textureName].vkID, opt));
+	_quadData.push_back(QuadData(quad, _textures[textureName].vkId, opt));
 }
 
 Vec2 Context::GetTextureDimensions(const char *name) {
@@ -253,7 +253,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	    imageExtent);
 
 	Texture texture;
-	texture.vkID   = _textures.size();
+	texture.vkId   = _textures.size();
 	texture.width  = width;
 	texture.height = height;
 
@@ -262,7 +262,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 
 	// allocate and create the image
 	VK_CHECK(vmaCreateImage(_vk.Allocator, &imageCreateInfo, &imageAllocateInfo,
-	                        &texture.Image, &texture.allocation, nullptr));
+	                        &texture.image, &texture.allocation, nullptr));
 
 	_vk.ImmediateSubmit([&](VkCommandBuffer cmd) {
 		// TRANSFER IMAGE TO
@@ -282,7 +282,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 		imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageBarrier_toTransfer.newLayout =
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		imageBarrier_toTransfer.image            = texture.Image;
+		imageBarrier_toTransfer.image            = texture.image;
 		imageBarrier_toTransfer.subresourceRange = range;
 
 		imageBarrier_toTransfer.srcAccessMask = 0;
@@ -306,7 +306,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 		copyRegion.imageSubresource.layerCount     = 1;
 		copyRegion.imageExtent                     = imageExtent;
 
-		vkCmdCopyBufferToImage(cmd, stagingBuffer.VkBuffer, texture.Image,
+		vkCmdCopyBufferToImage(cmd, stagingBuffer.VulkanBuffer, texture.image,
 		                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
 		                       &copyRegion);
 
@@ -329,16 +329,16 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 		                     nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 	});
 
-	_vk._deletionQueue.pushFunction([texture](const VkContext &ctx) {
-		vmaDestroyImage(ctx.Allocator, texture.Image, texture.allocation);
+	_vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
+		vmaDestroyImage(ctx.Allocator, texture.image, texture.allocation);
 	});
 
-	vmaDestroyBuffer(_vk.Allocator, stagingBuffer.VkBuffer,
+	vmaDestroyBuffer(_vk.Allocator, stagingBuffer.VulkanBuffer,
 	                 stagingBuffer.Allocation);
 
 	VkImageViewCreateInfo imageViewInfo{};
 	imageViewInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	imageViewInfo.image    = texture.Image;
+	imageViewInfo.image    = texture.image;
 	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	imageViewInfo.format   = imageFormat;
 	imageViewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -367,9 +367,9 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	// Change all the previously created descriptors
 	// into their own image views
 	for (auto [name, t] : _textures) {
-		descriptorImageInfos[t.vkID].sampler   = _vk.GlobalSampler;
-		descriptorImageInfos[t.vkID].imageView = t.imageView;
-		descriptorImageInfos[t.vkID].imageLayout =
+		descriptorImageInfos[t.vkId].sampler   = _vk.GlobalSampler;
+		descriptorImageInfos[t.vkId].imageView = t.imageView;
+		descriptorImageInfos[t.vkId].imageLayout =
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
@@ -384,7 +384,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 
 	vkUpdateDescriptorSets(_vk.Device, 1, &setWriteImage, 0, nullptr);
 
-	_vk._deletionQueue.pushFunction([texture](const VkContext &ctx) {
+	_vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
 		vkDestroyImageView(ctx.Device, texture.imageView, nullptr);
 	});
 

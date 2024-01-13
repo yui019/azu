@@ -12,8 +12,8 @@ Buffer::Buffer(const VmaAllocator &allocator, uint32_t size,
 	VmaAllocationCreateInfo vmaallocInfo = {};
 	vmaallocInfo.usage                   = memoryUsage;
 
-	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo, &VkBuffer,
-	                         &Allocation, nullptr));
+	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo,
+	                         &VulkanBuffer, &Allocation, nullptr));
 
 	vmaMapMemory(allocator, Allocation, &Data);
 }
