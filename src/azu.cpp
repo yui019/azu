@@ -351,7 +351,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	                           &texture.imageView));
 
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
-	descriptorImageInfos.reserve(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
+	descriptorImageInfos.resize(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
 
 	// Fill in all the descriptors with this same
 	// texture Only doing the minimum number of
