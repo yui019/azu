@@ -127,7 +127,7 @@ void main() {
 		float f         = fill_factor(dist, 0.0025);
 		vec4 foreground = vec4(inQuadData.color.rgb,
 		                       inQuadData.color.a * inQuadData.options.opacity);
-		outColor        = composite(vec4(0.0), apply_factor(foreground, f));
+		outColor        = composite(vec4(inQuadData.color.rgb, 0.0), apply_factor(foreground, f));
 	} else if (inQuadData.fillType == FILL_TYPE_TEXTURE) {
 		float dist = sdf_quad(p, quadPoints, radius, radiusPoints);
 		float f    = fill_factor(dist, 0.0025);
