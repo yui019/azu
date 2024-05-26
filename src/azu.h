@@ -7,7 +7,6 @@
 #include "util/quad_data.h"
 #include "vk_context/vk_context.h"
 
-#include "glm/glm.hpp"
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -19,7 +18,7 @@ namespace azu {
 class Context {
 	SDL_Window *_window;
 	VkContext _vk;
-	glm::mat4 _projectionMatrix;
+	float _projectionMatrix[4][4];
 
 	uint32_t _swapchainImageIndex; // is set at the beginning of beginDraw and
 	                               // used throughout the rendering loop
@@ -30,6 +29,8 @@ class Context {
 	std::unordered_map<std::string, Texture>
 	    _textures; // cleared at beginDraw and gets new
 	               // elements on every user call of drawQuad
+
+	void _calculateProjectionMatrix(float windowWidth, float windowHeight);
 
   public:
 	uint32_t FrameNumber = 0;

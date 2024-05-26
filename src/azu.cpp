@@ -15,7 +15,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "SDL_error.h"
-#include "glm/ext/matrix_clip_space.hpp"
 #include <vulkan/vulkan.h>
 
 using namespace azu;
@@ -31,14 +30,43 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 	if (_window == NULL)
 		throw SDL_GetError();
 
-	// inverted top and bottom because... uhhh idk
-	_projectionMatrix = glm::ortho(0.0, (double)width, 0.0, (double)height);
+	_calculateProjectionMatrix((float)width, (float)height);
 
 	_vk = VkContext(_window, VkExtent2D{width, height}, true);
 }
 
 Context::~Context() {
 	SDL_DestroyWindow(_window);
+}
+
+void Context::_calculateProjectionMatrix(float windowWidth,
+                                         float windowHeight) {
+	float left   = 0.0;
+	float right  = windowWidth;
+	float bottom = windowHeight;
+	float top    = 0.0;
+	float near   = -1.0;
+	float far    = 1.0;
+
+	_projectionMatrix[0][0] = 2 / (right - left);
+	_projectionMatrix[1][0] = 0.0;
+	_projectionMatrix[2][0] = 0.0;
+	_projectionMatrix[3][0] = -(right + left) / (right - left);
+
+	_projectionMatrix[0][1] = 0.0;
+	_projectionMatrix[1][1] = 2 / (bottom - top);
+	_projectionMatrix[2][1] = 0.0;
+	_projectionMatrix[3][1] = -(bottom + top) / (bottom - top);
+
+	_projectionMatrix[0][2] = 0.0;
+	_projectionMatrix[1][2] = 0.0;
+	_projectionMatrix[2][2] = 1 / (far - near);
+	_projectionMatrix[3][2] = -near / (far - near);
+
+	_projectionMatrix[0][3] = 0.0;
+	_projectionMatrix[1][3] = 0.0;
+	_projectionMatrix[2][3] = 0.0;
+	_projectionMatrix[3][3] = 1.0;
 }
 
 void Context::BeginDraw() {
