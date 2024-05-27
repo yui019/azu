@@ -1,6 +1,7 @@
 #include "vk_context.h"
 #include "../util/util.h"
 #include "../vk_init/vk_init.h"
+#include "VkBootstrap.h"
 
 using namespace azu;
 
@@ -39,4 +40,52 @@ void VkContext::ImmediateSubmit(
 
 	// reset the command buffer
 	vkResetCommandPool(Device, _immediateSubmitContext.commandPool, 0);
+}
+
+void VkContext::HandleWindowResize(VkExtent2D newWindowExtent) {
+	WindowExtent = newWindowExtent;
+
+	// DESTROY CURRENT FRAMEBUFFERS AND SWAPCHAIN
+	// ==========================================
+
+	for (uint32_t i = 0; i < Framebuffers.size(); i++) {
+		vkDestroyFramebuffer(Device, Framebuffers[i], nullptr);
+		vkDestroyImageView(Device, SwapchainImageViews[i], nullptr);
+	}
+
+	vkDestroySwapchainKHR(Device, Swapchain, nullptr);
+
+	// CREATE NEW SWAPCHAIN
+	// ====================
+
+	vkb::SwapchainBuilder vkbSwapchainBuilder{chosenGPU, Device, Surface};
+
+	vkb::Swapchain vkbSwapchain =
+	    vkbSwapchainBuilder
+	        .use_default_format_selection()
+	        // use vsync present mode
+	        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+	        .set_desired_extent(WindowExtent.width, WindowExtent.height)
+	        .build()
+	        .value();
+
+	Swapchain            = vkbSwapchain.swapchain;
+	SwapchainImages      = vkbSwapchain.get_images().value();
+	SwapchainImageViews  = vkbSwapchain.get_image_views().value();
+	SwapchainImageFormat = vkbSwapchain.image_format;
+
+	// CREATE NEW FRAMEBUFFERS
+	// =======================
+
+	VkFramebufferCreateInfo framebufferInfo =
+	    vk_init::framebufferCreateInfo(RenderPass, WindowExtent);
+
+	const uint32_t swapchainImageCount = (uint32_t)SwapchainImages.size();
+	Framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
+
+	for (uint32_t i = 0; i < swapchainImageCount; i++) {
+		framebufferInfo.pAttachments = &SwapchainImageViews[i];
+		VK_CHECK(vkCreateFramebuffer(Device, &framebufferInfo, nullptr,
+		                             &Framebuffers[i]));
+	}
 }

@@ -32,6 +32,8 @@ class Context {
 
 	void _calculateProjectionMatrix(float windowWidth, float windowHeight);
 
+	void _handleResize();
+
   public:
 	uint32_t FrameNumber = 0;
 

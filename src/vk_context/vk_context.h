@@ -151,6 +151,8 @@ class VkContext {
 	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)> &&function);
 
 	void FillQuadsBuffer(std::span<QuadData> quadData);
+
+	void HandleWindowResize(VkExtent2D newWindowExtent);
 };
 
 } // namespace azu

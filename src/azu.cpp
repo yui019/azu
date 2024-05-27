@@ -26,7 +26,8 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 
 	_window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
 	                           SDL_WINDOWPOS_UNDEFINED, (int32_t)width,
-	                           (int32_t)height, SDL_WINDOW_VULKAN);
+	                           (int32_t)height,
+	                           SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 	if (_window == NULL)
 		throw SDL_GetError();
 
@@ -69,6 +70,15 @@ void Context::_calculateProjectionMatrix(float windowWidth,
 	_projectionMatrix[3][3] = 1.0;
 }
 
+void Context::_handleResize() {
+	vkDeviceWaitIdle(_vk.Device);
+
+	int w, h;
+	SDL_GetWindowSize(_window, &w, &h);
+
+	_vk.HandleWindowResize(VkExtent2D{(uint32_t)w, (uint32_t)h});
+}
+
 void Context::BeginDraw() {
 	// reset this frame's quad data
 	_quadData.clear();
@@ -79,11 +89,29 @@ void Context::BeginDraw() {
 	    vkWaitForFences(_vk.Device, 1, &_vk.RenderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_vk.Device, 1, &_vk.RenderFence));
 
-	// request image from the swapchain (1 sec timeout) and signal
-	// _presentSemaphore
-	VK_CHECK(vkAcquireNextImageKHR(_vk.Device, _vk.Swapchain, 1000000000,
-	                               _vk.PresentSemaphore, nullptr,
-	                               &_swapchainImageIndex));
+	// If vkAcquireNextImageKHR returns VK_ERROR_OUT_OF_DATE_KHR, that means the
+	// swapchain needs to be recreated due to a window resize. But that's
+	// apparently not guaranteed to fix it on the first try so it's recreated
+	// again and again until it returns successfully. Usually what happens is
+	// that it returns VK_ERROR_OUT_OF_DATE_KHR, the swapchain is recreated and
+	// it returns success the second time (this second call is necessary btw, so
+	// even if it were guaranteed to go this smoothly every time, the loop would
+	// still be necessary just so that second call happens)
+	// This is all you need to handle window resizing btw, which is sort of
+	// surprising.
+	while (true) {
+		// Request image from the swapchain (1 sec timeout) and signal
+		// _presentSemaphore.
+		VkResult result = vkAcquireNextImageKHR(
+		    _vk.Device, _vk.Swapchain, 1000000000, _vk.PresentSemaphore,
+		    nullptr, &_swapchainImageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			_handleResize();
+		} else {
+			break;
+		}
+	}
 
 	VK_CHECK(vkResetCommandBuffer(_vk.MainCommandBuffer, 0));
 
@@ -203,7 +231,7 @@ void Context::EndDraw() {
 
 	presentInfo.pImageIndices = &_swapchainImageIndex;
 
-	VK_CHECK(vkQueuePresentKHR(_vk.GraphicsQueue, &presentInfo));
+	vkQueuePresentKHR(_vk.GraphicsQueue, &presentInfo);
 
 	FrameNumber++;
 }
