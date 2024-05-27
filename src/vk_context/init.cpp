@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "vk_context.h"
@@ -182,7 +183,7 @@ void VkContext::_initFramebuffers() {
 	VkFramebufferCreateInfo framebufferInfo =
 	    vk_init::framebufferCreateInfo(RenderPass, WindowExtent);
 
-	const uint32_t swapchainImageCount = SwapchainImages.size();
+	const uint32_t swapchainImageCount = (uint32_t)SwapchainImages.size();
 	Framebuffers = std::vector<VkFramebuffer>(swapchainImageCount);
 
 	for (uint32_t i = 0; i < swapchainImageCount; i++) {
@@ -441,39 +442,39 @@ void VkContext::_initPipelines() {
 
 	PipelineBuilder pipelineBuilder;
 
-	pipelineBuilder.ShaderStages = {
+	pipelineBuilder.shaderStages = {
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
 	                                           triangleVertShader.value()),
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
 	                                           triangleFragShader.value())};
 
-	pipelineBuilder.VertexInputInfo =
+	pipelineBuilder.vertexInputInfo =
 	    vk_init::pipelineVertexInputStateCreateInfo();
 
-	pipelineBuilder.InputAssembly =
+	pipelineBuilder.inputAssembly =
 	    vk_init::pipelineInputAssemblyStateCreateInfo(
 	        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-	pipelineBuilder.Rasterizer =
+	pipelineBuilder.rasterizer =
 	    vk_init::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
-	pipelineBuilder.Multisampling =
+	pipelineBuilder.multisampling =
 	    vk_init::pipelineMultisampleStateCreateInfo();
 
-	pipelineBuilder.ColorBlendAttachment =
+	pipelineBuilder.colorBlendAttachment =
 	    vk_init::pipelineColorBlendAttachmentState();
 
 	// build viewport and scissor from the swapchain extents
-	pipelineBuilder.Viewport.x        = 0.0f;
-	pipelineBuilder.Viewport.y        = 0.0f;
-	pipelineBuilder.Viewport.width    = (float)WindowExtent.width;
-	pipelineBuilder.Viewport.height   = (float)WindowExtent.height;
-	pipelineBuilder.Viewport.minDepth = 0.0f;
-	pipelineBuilder.Viewport.maxDepth = 1.0f;
-	pipelineBuilder.Scissor.offset    = {0, 0};
-	pipelineBuilder.Scissor.extent    = WindowExtent;
+	pipelineBuilder.viewport.x        = 0.0f;
+	pipelineBuilder.viewport.y        = 0.0f;
+	pipelineBuilder.viewport.width    = (float)WindowExtent.width;
+	pipelineBuilder.viewport.height   = (float)WindowExtent.height;
+	pipelineBuilder.viewport.minDepth = 0.0f;
+	pipelineBuilder.viewport.maxDepth = 1.0f;
+	pipelineBuilder.scissor.offset    = {0, 0};
+	pipelineBuilder.scissor.extent    = WindowExtent;
 
-	pipelineBuilder.PipelineLayout = PipelineLayout;
+	pipelineBuilder.pipelineLayout = PipelineLayout;
 
 	// finally build the pipeline
 	auto pipeline = pipelineBuilder.build(Device, RenderPass);

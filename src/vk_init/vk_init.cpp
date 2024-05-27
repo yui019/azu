@@ -1,10 +1,13 @@
 #include "vk_init.h"
 
+using namespace azu;
+
 VkCommandPoolCreateInfo vk_init::commandPoolCreateInfo(
     uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags /*= 0*/
 ) {
 	VkCommandPoolCreateInfo info = {};
 	info.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	info.queueFamilyIndex        = queueFamilyIndex;
 	info.pNext                   = nullptr;
 
 	info.flags = flags;
@@ -231,9 +234,9 @@ VkPipelineLayoutCreateInfo vk_init::pipelineLayoutCreateInfo(
 
 	// empty defaults
 	info.flags                  = 0;
-	info.setLayoutCount         = descriptorSetLayouts.size();
+	info.setLayoutCount         = (uint32_t)descriptorSetLayouts.size();
 	info.pSetLayouts            = descriptorSetLayouts.data();
-	info.pushConstantRangeCount = pushConstantRanges.size();
+	info.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
 	info.pPushConstantRanges    = pushConstantRanges.data();
 	return info;
 }

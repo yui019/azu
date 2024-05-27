@@ -2,12 +2,11 @@
 #define UTIL_VK_INIT_H
 
 #include <span>
-#include <cstddef>
 #include <cstdint>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-namespace vk_init {
+namespace azu::vk_init {
 
 VkCommandPoolCreateInfo
 commandPoolCreateInfo(uint32_t queueFamilyIndex,
@@ -62,6 +61,6 @@ VkImageCreateInfo imageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags,
 
 VkSamplerCreateInfo samplerCreateInfo(VkFilter filters,
                                       VkSamplerAddressMode samplerAddressMode);
-} // namespace vk_init
+} // namespace azu::vk_init
 
 #endif // UTIL_VK_INIT_H

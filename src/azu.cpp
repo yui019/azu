@@ -25,8 +25,8 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 	}
 
 	_window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
-	                           SDL_WINDOWPOS_UNDEFINED, width, height,
-	                           SDL_WINDOW_VULKAN);
+	                           SDL_WINDOWPOS_UNDEFINED, (int32_t)width,
+	                           (int32_t)height, SDL_WINDOW_VULKAN);
 	if (_window == NULL)
 		throw SDL_GetError();
 
@@ -150,7 +150,7 @@ void Context::EndDraw() {
 	vkCmdPushConstants(cmd, _vk.PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
 	                   4 * 4 * 4, &_projectionMatrix);
 
-	vkCmdDraw(cmd, 6 * _quadData.size(), 1, 0, 0);
+	vkCmdDraw(cmd, (uint32_t)(6 * _quadData.size()), 1, 0, 0);
 
 	vkCmdEndRenderPass(cmd);
 	VK_CHECK(vkEndCommandBuffer(cmd));
@@ -253,13 +253,13 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	}
 
 	void *pixel_ptr        = pixels;
-	VkDeviceSize imageSize = width * height * 4;
+	VkDeviceSize imageSize = (uint64_t)(width * height * 4);
 
 	// temporary CPU buffer that will be used to upload
 	// to a real GPU buffer later on
 	Buffer stagingBuffer =
-	    Buffer(_vk.Allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	           VMA_MEMORY_USAGE_CPU_ONLY);
+	    Buffer(_vk.Allocator, (uint32_t)imageSize,
+	           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
 	// copy data to stagingBuffer and unmap its memory
 	memcpy(stagingBuffer.Data, pixel_ptr, static_cast<size_t>(imageSize));
@@ -281,9 +281,9 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	    imageExtent);
 
 	Texture texture;
-	texture.vkId   = _textures.size();
-	texture.width  = width;
-	texture.height = height;
+	texture.vkId   = (uint32_t)_textures.size();
+	texture.width  = (uint32_t)width;
+	texture.height = (uint32_t)height;
 
 	VmaAllocationCreateInfo imageAllocateInfo = {};
 	imageAllocateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -407,7 +407,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	setWriteImage.dstBinding           = 1;
 	setWriteImage.dstSet               = _vk.GlobalDescriptorSet;
 	setWriteImage.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWriteImage.descriptorCount = _textures.size() + 1;
+	setWriteImage.descriptorCount = (uint32_t)_textures.size() + 1;
 	setWriteImage.pImageInfo      = descriptorImageInfos.data();
 
 	vkUpdateDescriptorSets(_vk.Device, 1, &setWriteImage, 0, nullptr);

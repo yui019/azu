@@ -2,7 +2,6 @@
 
 #include <fstream>
 #include <optional>
-#include <stdexcept>
 
 using namespace azu;
 
@@ -21,7 +20,7 @@ VkContext::_loadShaderModuleFromFile(const char *path) const {
 	// put file cursor at beginning
 	file.seekg(0);
 	// load the entire file into the buffer
-	file.read((char *)buffer.data(), fileSize);
+	file.read((char *)buffer.data(), (int64_t)fileSize);
 	// now that the file is loaded into the buffer, close it
 	file.close();
 

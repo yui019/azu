@@ -2,8 +2,8 @@
 #define UTIL_H
 
 #include <cassert>
-#include <stdexcept>
-#include <string>
+#include <stdexcept> // IWYU pragma: keep
+#include <string>    // IWYU pragma: keep
 
 // Use (void) to silence unused warnings.
 #define ASSERT(exp, msg) assert(((void)msg, exp))
