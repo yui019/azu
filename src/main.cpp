@@ -1,7 +1,4 @@
 #include "azu.h"
-#include "util/quad_data.h"
-#include "util/geometry.h"
-#include "util/color.h"
 
 int main() {
 	using namespace azu;
