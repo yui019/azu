@@ -8,17 +8,17 @@
 namespace azu {
 
 struct PipelineBuilder {
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-	VkViewport viewport;
-	VkRect2D scissor;
-	VkPipelineRasterizationStateCreateInfo rasterizer;
-	VkPipelineColorBlendAttachmentState colorBlendAttachment;
-	VkPipelineMultisampleStateCreateInfo multisampling;
-	VkPipelineLayout pipelineLayout;
+	std::vector<VkPipelineShaderStageCreateInfo> ShaderStages;
+	VkPipelineVertexInputStateCreateInfo VertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo InputAssembly;
+	VkViewport Viewport;
+	VkRect2D Scissor;
+	VkPipelineRasterizationStateCreateInfo Rasterizer;
+	VkPipelineColorBlendAttachmentState ColorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo Multisampling;
+	VkPipelineLayout PipelineLayout;
 
-	std::optional<VkPipeline> build(VkDevice device, VkRenderPass pass);
+	std::optional<VkPipeline> Build(VkDevice device, VkRenderPass pass);
 };
 
 } // namespace azu

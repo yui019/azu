@@ -7,16 +7,14 @@ struct Vec2 {
 	float x;
 	float y;
 
+	Vec2(float v = 0.0) : x(v), y(v) {}
+
+	Vec2(float x, float y) : x(x), y(y) {}
+
+	Vec2(int x, int y) : x((float)x), y((float)y) {}
+
 	static Vec2 zero() {
-		return {0.0, 0.0};
-	}
-
-	static Vec2 create(float x, float y) {
-		return {x, y};
-	}
-
-	static Vec2 create(int x, int y) {
-		return {(float)x, (float)y};
+		return {0, 0};
 	}
 };
 
@@ -25,40 +23,23 @@ struct Vec3 {
 	float y;
 	float z;
 
-	static Vec3 zero() {
-		return {0.0, 0.0, 0.0};
-	}
+	Vec3(float v = 0.0) : x(v), y(v), z(v) {}
 
-	static Vec3 create(float x, float y, float z) {
-		return {x, y, z};
-	}
+	Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
-	static Vec3 create(int x, int y, int z) {
-		return {(float)x, (float)y, (float)z};
-	}
+	Vec3(int x, int y, int z) : x((float)x), y((float)y), z((float)z) {}
 };
 
 struct Quad {
 	Vec2 pos;
 	Vec2 size;
 
-	static Quad create(Vec2 pos, Vec2 size) {
-		return {pos, size};
-	}
+	Quad(Vec2 pos, Vec2 size) : pos(pos), size(size) {}
 
-	static Quad create(float x, float y, float w, float h) {
-		return {
-		    {x, y},
-            {w, h}
-        };
-	}
+	Quad(float x, float y, float w, float h) : pos({x, y}), size({w, h}) {}
 
-	static Quad create(int x, int y, int w, int h) {
-		return {
-		    {(float)x, (float)y},
-            {(float)w, (float)h}
-        };
-	}
+	Quad(int x, int y, int w, int h)
+	    : pos({(float)x, (float)y}), size({(float)w, (float)h}) {}
 };
 
 } // namespace azu

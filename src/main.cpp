@@ -32,17 +32,16 @@ int main() {
 			}
 		}
 
-		context.BeginDraw();
+		context.Draw([&] {
+			context.DrawQuad(Quad(0, 0, 200, 200), "akkarin",
+			                 DrawQuadOptions(QuadCornerValues(0.25), 1.0));
 
-		context.DrawQuad(Quad::create(0, 0, 200, 200), "akkarin",
-		                 DrawQuadOptions(QuadCornerValues(0.25), 1.0));
-		context.DrawQuad(
-		    Quad::create(screenWidth / 2 - width / 2,
-		                 screenHeight / 2 - height / 2, width, height),
-		    Color::white(),
-		    DrawQuadOptions(QuadCornerValues(0.0, 0.5, 0.5, 0.0), 1.0));
-
-		context.EndDraw();
+			context.DrawQuad(
+			    Quad(screenWidth / 2 - width / 2, screenHeight / 2 - height / 2,
+			         width, height),
+			    Color::white(),
+			    DrawQuadOptions(QuadCornerValues(0.0, 0.5, 0.5, 0.0), 1.0));
+		});
 	}
 
 	return 0;

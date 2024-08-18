@@ -442,42 +442,42 @@ void VkContext::_initPipelines() {
 
 	PipelineBuilder pipelineBuilder;
 
-	pipelineBuilder.shaderStages = {
+	pipelineBuilder.ShaderStages = {
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
 	                                           triangleVertShader.value()),
 	    vk_init::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
 	                                           triangleFragShader.value())};
 
-	pipelineBuilder.vertexInputInfo =
+	pipelineBuilder.VertexInputInfo =
 	    vk_init::pipelineVertexInputStateCreateInfo();
 
-	pipelineBuilder.inputAssembly =
+	pipelineBuilder.InputAssembly =
 	    vk_init::pipelineInputAssemblyStateCreateInfo(
 	        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-	pipelineBuilder.rasterizer =
+	pipelineBuilder.Rasterizer =
 	    vk_init::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
-	pipelineBuilder.multisampling =
+	pipelineBuilder.Multisampling =
 	    vk_init::pipelineMultisampleStateCreateInfo();
 
-	pipelineBuilder.colorBlendAttachment =
+	pipelineBuilder.ColorBlendAttachment =
 	    vk_init::pipelineColorBlendAttachmentState();
 
 	// build viewport and scissor from the swapchain extents
-	pipelineBuilder.viewport.x        = 0.0f;
-	pipelineBuilder.viewport.y        = 0.0f;
-	pipelineBuilder.viewport.width    = (float)WindowExtent.width;
-	pipelineBuilder.viewport.height   = (float)WindowExtent.height;
-	pipelineBuilder.viewport.minDepth = 0.0f;
-	pipelineBuilder.viewport.maxDepth = 1.0f;
-	pipelineBuilder.scissor.offset    = {0, 0};
-	pipelineBuilder.scissor.extent    = WindowExtent;
+	pipelineBuilder.Viewport.x        = 0.0f;
+	pipelineBuilder.Viewport.y        = 0.0f;
+	pipelineBuilder.Viewport.width    = (float)WindowExtent.width;
+	pipelineBuilder.Viewport.height   = (float)WindowExtent.height;
+	pipelineBuilder.Viewport.minDepth = 0.0f;
+	pipelineBuilder.Viewport.maxDepth = 1.0f;
+	pipelineBuilder.Scissor.offset    = {0, 0};
+	pipelineBuilder.Scissor.extent    = WindowExtent;
 
-	pipelineBuilder.pipelineLayout = PipelineLayout;
+	pipelineBuilder.PipelineLayout = PipelineLayout;
 
 	// finally build the pipeline
-	auto pipeline = pipelineBuilder.build(Device, RenderPass);
+	auto pipeline = pipelineBuilder.Build(Device, RenderPass);
 	if (pipeline) {
 		Pipeline = pipeline.value();
 	} else {

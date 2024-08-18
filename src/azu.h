@@ -42,6 +42,13 @@ class Context {
 	void BeginDraw();
 	void EndDraw();
 
+	// Just a wrapper over calling BeginDraw and EndDraw
+	template <typename F> void Draw(F f) {
+		BeginDraw();
+		f();
+		EndDraw();
+	}
+
 	void DrawQuad(Quad quad, Color color,
 	              std::optional<DrawQuadOptions> options = std::nullopt);
 	void DrawQuad(Quad quad, const char *textureName,

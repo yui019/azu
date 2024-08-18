@@ -30,8 +30,8 @@ int main() {
 	const int screenHeight = 600;
 	auto context = azu::Context("Bunnymark", screenWidth, screenHeight);
 
-	context.createTextureFromFile("alien", "examples/res/smug_alien.png");
-	azu::Vec2 alienSize = context.getTextureDimensions("alien");
+	context.CreateTextureFromFile("alien", "examples/res/smug_alien.png");
+	azu::Vec2 alienSize = context.GetTextureDimensions("alien");
 	alienSize.x         = alienSize.x / 30;
 	alienSize.y         = alienSize.y / 30;
 
@@ -87,16 +87,16 @@ int main() {
 			}
 		}
 
-		context.beginDraw();
+		context.BeginDraw();
 
 		for (size_t i = 0; i < bunnies.size(); i++) {
-			context.drawQuad(azu::Quad::create(bunnies[i].position, alienSize),
+			context.DrawQuad(azu::Quad::create(bunnies[i].position, alienSize),
 			                 "alien");
 		}
 
 		printf("bunnies: %zu\n", bunnies.size());
 
-		context.endDraw();
+		context.EndDraw();
 	}
 
 	return 0;
