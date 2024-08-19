@@ -24,20 +24,20 @@ Context::Context(std::string_view title, uint32_t width, uint32_t height) {
 		throw SDL_GetError();
 	}
 
-	_window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
-	                           SDL_WINDOWPOS_UNDEFINED, (int32_t)width,
-	                           (int32_t)height,
-	                           SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-	if (_window == NULL)
+	Window = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_UNDEFINED,
+	                          SDL_WINDOWPOS_UNDEFINED, (int32_t)width,
+	                          (int32_t)height,
+	                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+	if (Window == NULL)
 		throw SDL_GetError();
 
 	_calculateProjectionMatrix((float)width, (float)height);
 
-	_vk = VkContext(_window, VkExtent2D{width, height}, true);
+	Vk = VkContext(Window, VkExtent2D{width, height}, true);
 }
 
 Context::~Context() {
-	SDL_DestroyWindow(_window);
+	SDL_DestroyWindow(Window);
 }
 
 void Context::_calculateProjectionMatrix(float windowWidth,
@@ -71,12 +71,12 @@ void Context::_calculateProjectionMatrix(float windowWidth,
 }
 
 void Context::_handleResize() {
-	vkDeviceWaitIdle(_vk.Device);
+	vkDeviceWaitIdle(Vk.Device);
 
 	int w, h;
-	SDL_GetWindowSize(_window, &w, &h);
+	SDL_GetWindowSize(Window, &w, &h);
 
-	_vk.HandleWindowResize(VkExtent2D{(uint32_t)w, (uint32_t)h});
+	Vk.HandleWindowResize(VkExtent2D{(uint32_t)w, (uint32_t)h});
 }
 
 void Context::BeginDraw() {
@@ -85,9 +85,8 @@ void Context::BeginDraw() {
 
 	// wait until the GPU has finished rendering the last frame. Timeout of 1
 	// second
-	VK_CHECK(
-	    vkWaitForFences(_vk.Device, 1, &_vk.RenderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(_vk.Device, 1, &_vk.RenderFence));
+	VK_CHECK(vkWaitForFences(Vk.Device, 1, &Vk.RenderFence, true, 1000000000));
+	VK_CHECK(vkResetFences(Vk.Device, 1, &Vk.RenderFence));
 
 	// If vkAcquireNextImageKHR returns VK_ERROR_OUT_OF_DATE_KHR, that means the
 	// swapchain needs to be recreated due to a window resize. But that's
@@ -102,9 +101,9 @@ void Context::BeginDraw() {
 	while (true) {
 		// Request image from the swapchain (1 sec timeout) and signal
 		// _presentSemaphore.
-		VkResult result = vkAcquireNextImageKHR(
-		    _vk.Device, _vk.Swapchain, 1000000000, _vk.PresentSemaphore,
-		    nullptr, &_swapchainImageIndex);
+		VkResult result = vkAcquireNextImageKHR(Vk.Device, Vk.Swapchain,
+		                                        1000000000, Vk.PresentSemaphore,
+		                                        nullptr, &_swapchainImageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			_handleResize();
@@ -113,13 +112,13 @@ void Context::BeginDraw() {
 		}
 	}
 
-	VK_CHECK(vkResetCommandBuffer(_vk.MainCommandBuffer, 0));
+	VK_CHECK(vkResetCommandBuffer(Vk.MainCommandBuffer, 0));
 
 	// BEGIN COMMAND BUFFER
 	// --------------------
 
 	// naming it cmd for shorter writing
-	VkCommandBuffer cmd = _vk.MainCommandBuffer;
+	VkCommandBuffer cmd = Vk.MainCommandBuffer;
 
 	// this command buffer will be used
 	// exactly once, so the usage_one_time flag is used
@@ -145,11 +144,11 @@ void Context::BeginDraw() {
 	rpInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpInfo.pNext                 = nullptr;
 
-	rpInfo.renderPass          = _vk.RenderPass;
+	rpInfo.renderPass          = Vk.RenderPass;
 	rpInfo.renderArea.offset.x = 0;
 	rpInfo.renderArea.offset.y = 0;
-	rpInfo.renderArea.extent   = _vk.WindowExtent;
-	rpInfo.framebuffer         = _vk.Framebuffers[_swapchainImageIndex];
+	rpInfo.renderArea.extent   = Vk.WindowExtent;
+	rpInfo.framebuffer         = Vk.Framebuffers[_swapchainImageIndex];
 
 	// connect clear values
 	rpInfo.clearValueCount = 1;
@@ -161,21 +160,21 @@ void Context::BeginDraw() {
 void Context::EndDraw() {
 	// fill quads buffer with the quads that were rendered by the user in
 	// drawQuads
-	_vk.FillQuadsBuffer(_quadData);
+	Vk.FillQuadsBuffer(_quadData);
 
 	// RENDERING COMMANDS
 	// ------------------
 
 	// naming it cmd for shorter writing
-	VkCommandBuffer cmd = _vk.MainCommandBuffer;
+	VkCommandBuffer cmd = Vk.MainCommandBuffer;
 
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk.Pipeline);
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Vk.Pipeline);
 
 	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                        _vk.PipelineLayout, 0, 1, &_vk.GlobalDescriptorSet,
-	                        0, nullptr);
+	                        Vk.PipelineLayout, 0, 1, &Vk.GlobalDescriptorSet, 0,
+	                        nullptr);
 
-	vkCmdPushConstants(cmd, _vk.PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+	vkCmdPushConstants(cmd, Vk.PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
 	                   4 * 4 * 4, &_projectionMatrix);
 
 	vkCmdDraw(cmd, (uint32_t)(6 * _quadData.size()), 1, 0, 0);
@@ -200,17 +199,17 @@ void Context::EndDraw() {
 	submit.pWaitDstStageMask = &waitStage;
 
 	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores    = &_vk.PresentSemaphore;
+	submit.pWaitSemaphores    = &Vk.PresentSemaphore;
 
 	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores    = &_vk.RenderSemaphore;
+	submit.pSignalSemaphores    = &Vk.RenderSemaphore;
 
 	submit.commandBufferCount = 1;
 	submit.pCommandBuffers    = &cmd;
 
 	// submit command buffer to the queue and execute it.
 	//  _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(_vk.GraphicsQueue, 1, &submit, _vk.RenderFence));
+	VK_CHECK(vkQueueSubmit(Vk.GraphicsQueue, 1, &submit, Vk.RenderFence));
 
 	// PRESENT TO SWAPCHAIN
 	// --------------------
@@ -223,15 +222,15 @@ void Context::EndDraw() {
 	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext            = nullptr;
 
-	presentInfo.pSwapchains    = &_vk.Swapchain;
+	presentInfo.pSwapchains    = &Vk.Swapchain;
 	presentInfo.swapchainCount = 1;
 
-	presentInfo.pWaitSemaphores    = &_vk.RenderSemaphore;
+	presentInfo.pWaitSemaphores    = &Vk.RenderSemaphore;
 	presentInfo.waitSemaphoreCount = 1;
 
 	presentInfo.pImageIndices = &_swapchainImageIndex;
 
-	vkQueuePresentKHR(_vk.GraphicsQueue, &presentInfo);
+	vkQueuePresentKHR(Vk.GraphicsQueue, &presentInfo);
 
 	FrameNumber++;
 }
@@ -286,12 +285,12 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	// temporary CPU buffer that will be used to upload
 	// to a real GPU buffer later on
 	Buffer stagingBuffer =
-	    Buffer(_vk.Allocator, (uint32_t)imageSize,
+	    Buffer(Vk.Allocator, (uint32_t)imageSize,
 	           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
 	// copy data to stagingBuffer and unmap its memory
 	memcpy(stagingBuffer.Data, pixel_ptr, static_cast<size_t>(imageSize));
-	vmaUnmapMemory(_vk.Allocator, stagingBuffer.Allocation);
+	vmaUnmapMemory(Vk.Allocator, stagingBuffer.Allocation);
 
 	// image data is now in stagingBuffer
 	stbi_image_free(pixels);
@@ -317,10 +316,10 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	imageAllocateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	// allocate and create the image
-	VK_CHECK(vmaCreateImage(_vk.Allocator, &imageCreateInfo, &imageAllocateInfo,
+	VK_CHECK(vmaCreateImage(Vk.Allocator, &imageCreateInfo, &imageAllocateInfo,
 	                        &texture.image, &texture.allocation, nullptr));
 
-	_vk.ImmediateSubmit([&](VkCommandBuffer cmd) {
+	Vk.ImmediateSubmit([&](VkCommandBuffer cmd) {
 		// TRANSFER IMAGE TO
 		// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 		// ------------------------------------------------------
@@ -385,11 +384,11 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 		                     nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 	});
 
-	_vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
+	Vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
 		vmaDestroyImage(ctx.Allocator, texture.image, texture.allocation);
 	});
 
-	vmaDestroyBuffer(_vk.Allocator, stagingBuffer.VulkanBuffer,
+	vmaDestroyBuffer(Vk.Allocator, stagingBuffer.VulkanBuffer,
 	                 stagingBuffer.Allocation);
 
 	VkImageViewCreateInfo imageViewInfo{};
@@ -403,18 +402,18 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	imageViewInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewInfo.subresourceRange.layerCount     = 1;
 
-	VK_CHECK(vkCreateImageView(_vk.Device, &imageViewInfo, nullptr,
+	VK_CHECK(vkCreateImageView(Vk.Device, &imageViewInfo, nullptr,
 	                           &texture.imageView));
 
 	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
-	descriptorImageInfos.resize(_vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
+	descriptorImageInfos.resize(Vk.INITIAL_ARRAY_OF_TEXTURES_LENGTH);
 
 	// Fill in all the descriptors with this same
 	// texture Only doing the minimum number of
 	// descriptors (_textures.size()+1), everything else
 	// can stay uninitialized
 	for (uint32_t i = 0; i < _textures.size() + 1; i++) {
-		descriptorImageInfos[i].sampler   = _vk.GlobalSampler;
+		descriptorImageInfos[i].sampler   = Vk.GlobalSampler;
 		descriptorImageInfos[i].imageView = texture.imageView;
 		descriptorImageInfos[i].imageLayout =
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -423,7 +422,7 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	// Change all the previously created descriptors
 	// into their own image views
 	for (auto [name, t] : _textures) {
-		descriptorImageInfos[t.vkId].sampler   = _vk.GlobalSampler;
+		descriptorImageInfos[t.vkId].sampler   = Vk.GlobalSampler;
 		descriptorImageInfos[t.vkId].imageView = t.imageView;
 		descriptorImageInfos[t.vkId].imageLayout =
 		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -433,14 +432,14 @@ bool Context::CreateTextureFromFile(const char *name, const char *path) {
 	setWriteImage.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	setWriteImage.pNext                = nullptr;
 	setWriteImage.dstBinding           = 1;
-	setWriteImage.dstSet               = _vk.GlobalDescriptorSet;
+	setWriteImage.dstSet               = Vk.GlobalDescriptorSet;
 	setWriteImage.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	setWriteImage.descriptorCount = (uint32_t)_textures.size() + 1;
 	setWriteImage.pImageInfo      = descriptorImageInfos.data();
 
-	vkUpdateDescriptorSets(_vk.Device, 1, &setWriteImage, 0, nullptr);
+	vkUpdateDescriptorSets(Vk.Device, 1, &setWriteImage, 0, nullptr);
 
-	_vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
+	Vk.DeletionQueue.pushFunction([texture](const VkContext &ctx) {
 		vkDestroyImageView(ctx.Device, texture.imageView, nullptr);
 	});
 

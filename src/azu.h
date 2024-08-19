@@ -16,8 +16,6 @@
 
 namespace azu {
 class Context {
-	SDL_Window *_window;
-	VkContext _vk;
 	float _projectionMatrix[4][4];
 
 	uint32_t _swapchainImageIndex; // is set at the beginning of beginDraw and
@@ -36,6 +34,9 @@ class Context {
 
   public:
 	uint32_t FrameNumber = 0;
+
+	SDL_Window *Window;
+	VkContext Vk;
 
 	Context(std::string_view title, uint32_t width, uint32_t height);
 
